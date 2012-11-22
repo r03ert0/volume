@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "Analyze.h"
+#include <sys/types.h>
+#include <unistd.h>
 
 #define kORIG	1
 #define kNU		2
