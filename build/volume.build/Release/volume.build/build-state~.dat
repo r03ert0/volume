@@ -1,0 +1,210 @@
+Tvolume
+v7
+r0
+t326622870.081488
+cCheck dependencies
+cCompileC build/volume.build/Release/volume.build/Objects-normal/ppc/main.o /Users/roberto/Applications/brainbits/v.volume/main.c normal ppc c com.apple.compilers.gcc.4_2
+cCompileC build/volume.build/Release/volume.build/Objects-normal/ppc/Analyze.o /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c normal ppc c com.apple.compilers.gcc.4_2
+cCompileC build/volume.build/Release/volume.build/Objects-normal/i386/main.o /Users/roberto/Applications/brainbits/v.volume/main.c normal i386 c com.apple.compilers.gcc.4_2
+cLd /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume normal ppc
+cCompileC build/volume.build/Release/volume.build/Objects-normal/i386/Analyze.o /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c normal i386 c com.apple.compilers.gcc.4_2
+cLd /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume normal i386
+cCreateUniversalBinary /Users/roberto/Applications/brainbits/v.volume/build/Release/volume normal "ppc i386"
+cGenerateDSYMFile /Users/roberto/Applications/brainbits/v.volume/build/Release/volume.dSYM /Users/roberto/Applications/brainbits/v.volume/build/Release/volume
+
+N/Developer/SDKs/MacOSX10.5.sdk
+c000000004B7D589B00000000000000EE
+t1266505883
+s238
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/math.h
+c0000000047BA987000000000000004B7
+t1203411056
+s1207
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/stdio.h
+c0000000047BA99310000000000003D1D
+t1203411249
+s15645
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/stdlib.h
+c0000000047BA99310000000000002A79
+t1203411249
+s10873
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/string.h
+c0000000047BA99320000000000001731
+t1203411250
+s5937
+
+N/Users/roberto/Applications/brainbits/RAMONES/Analyze.h
+c000000004C51479C0000000000000A3E
+t1280395164
+s2622
+i<stdlib.h>
+i<stdio.h>
+i<string.h>
+
+N/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c
+c000000004AFBDDD400000000000011F6
+t1258020308
+s4598
+i"Analyze.h"
+
+N/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.h
+c000000004C51479C0000000000000A3E
+t1280395164
+s2622
+i<stdlib.h>
+i<stdio.h>
+i<string.h>
+
+N/Users/roberto/Applications/brainbits/v.volume/build/Release/volume
+t1304930069
+s52964
+
+N/Users/roberto/Applications/brainbits/v.volume/build/Release/volume.dSYM
+t1304930070
+s102
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/Analyze.o
+t1304930069
+s16284
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/main.o
+t1304930069
+s22676
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume
+t1304930069
+s24292
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume.LinkFileList
+c000000004DC7A71400000000000000E7
+t1304930068
+s231
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/Analyze.o
+t1304930069
+s17580
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/main.o
+t1304930069
+s28332
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume
+t1304930069
+s23980
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume.LinkFileList
+c000000004DC7A71400000000000000E5
+t1304930068
+s229
+
+N/Users/roberto/Applications/brainbits/v.volume/main.c
+c000000004DC7A2E2000000000000298B
+t1304928994
+s10635
+i<stdio.h>
+i"Analyze.h"
+i"math.h"
+
+CCheck dependencies
+r0
+lSLF07#2@18"Check dependencies326622868#326622868#0(0"0(0#1#0"4300911832#0"0#
+
+CCompileC build/volume.build/Release/volume.build/Objects-normal/i386/Analyze.o /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c normal i386 c com.apple.compilers.gcc.4_2
+s326622869.502263
+e326622869.864900
+r1
+xCompileC
+xbuild/volume.build/Release/volume.build/Objects-normal/i386/Analyze.o
+x/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@75"Compile /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c326622869#326622869#0(0"0(0#0#67"/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c4300911832#991"    cd /Users/roberto/Applications/brainbits/v.volume    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.5.sdk -fvisibility=hidden -mmacosx-version-min=10.5 -gdwarf-2 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/volume.hmap -F/Users/roberto/Applications/brainbits/v.volume/build/Release -I/Users/roberto/Applications/brainbits/v.volume/build/Release/include -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources/i386 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources -c /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/Analyze.o0#
+
+CCompileC build/volume.build/Release/volume.build/Objects-normal/i386/main.o /Users/roberto/Applications/brainbits/v.volume/main.c normal i386 c com.apple.compilers.gcc.4_2
+s326622869.146809
+e326622869.862856
+r1
+xCompileC
+xbuild/volume.build/Release/volume.build/Objects-normal/i386/main.o
+x/Users/roberto/Applications/brainbits/v.volume/main.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@61"Compile /Users/roberto/Applications/brainbits/v.volume/main.c326622869#326622869#0(0"0(0#0#53"/Users/roberto/Applications/brainbits/v.volume/main.c4300911832#974"    cd /Users/roberto/Applications/brainbits/v.volume    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.5.sdk -fvisibility=hidden -mmacosx-version-min=10.5 -gdwarf-2 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/volume.hmap -F/Users/roberto/Applications/brainbits/v.volume/build/Release -I/Users/roberto/Applications/brainbits/v.volume/build/Release/include -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources/i386 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources -c /Users/roberto/Applications/brainbits/v.volume/main.c -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/main.o0#
+
+CCompileC build/volume.build/Release/volume.build/Objects-normal/ppc/Analyze.o /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c normal ppc c com.apple.compilers.gcc.4_2
+s326622868.320608
+e326622869.146706
+r1
+xCompileC
+xbuild/volume.build/Release/volume.build/Objects-normal/ppc/Analyze.o
+x/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c
+xnormal
+xppc
+xc
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@75"Compile /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c326622868#326622869#0(0"0(0#0#67"/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c4300911832#998"    cd /Users/roberto/Applications/brainbits/v.volume    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x c -arch ppc -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.5.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.5 -gdwarf-2 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/volume.hmap -F/Users/roberto/Applications/brainbits/v.volume/build/Release -I/Users/roberto/Applications/brainbits/v.volume/build/Release/include -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources/ppc -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources -c /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/Analyze.o0#
+
+CCompileC build/volume.build/Release/volume.build/Objects-normal/ppc/main.o /Users/roberto/Applications/brainbits/v.volume/main.c normal ppc c com.apple.compilers.gcc.4_2
+s326622868.314962
+e326622869.344583
+r1
+xCompileC
+xbuild/volume.build/Release/volume.build/Objects-normal/ppc/main.o
+x/Users/roberto/Applications/brainbits/v.volume/main.c
+xnormal
+xppc
+xc
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@61"Compile /Users/roberto/Applications/brainbits/v.volume/main.c326622868#326622869#0(0"0(0#0#53"/Users/roberto/Applications/brainbits/v.volume/main.c4300911832#981"    cd /Users/roberto/Applications/brainbits/v.volume    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x c -arch ppc -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.5.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.5 -gdwarf-2 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/volume.hmap -F/Users/roberto/Applications/brainbits/v.volume/build/Release -I/Users/roberto/Applications/brainbits/v.volume/build/Release/include -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources/ppc -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/DerivedSources -c /Users/roberto/Applications/brainbits/v.volume/main.c -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/main.o0#
+
+CCreateUniversalBinary /Users/roberto/Applications/brainbits/v.volume/build/Release/volume normal "ppc i386"
+s326622869.928484
+e326622869.988109
+r1
+xCreateUniversalBinary
+x/Users/roberto/Applications/brainbits/v.volume/build/Release/volume
+xnormal
+xppc i386
+lSLF07#2@60"CreateUniversalBinary build/Release/volume normal "ppc i386"326622869#326622869#0(0"0(0#0#55"/Users/roberto/Applications/brainbits/v.volume/ppc i3864300911832#383"    cd /Users/roberto/Applications/brainbits/v.volume    /usr/bin/lipo -create /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume -output /Users/roberto/Applications/brainbits/v.volume/build/Release/volume0#
+
+CGenerateDSYMFile /Users/roberto/Applications/brainbits/v.volume/build/Release/volume.dSYM /Users/roberto/Applications/brainbits/v.volume/build/Release/volume
+s326622869.988320
+e326622870.081431
+r1
+xGenerateDSYMFile
+x/Users/roberto/Applications/brainbits/v.volume/build/Release/volume.dSYM
+x/Users/roberto/Applications/brainbits/v.volume/build/Release/volume
+lSLF07#2@63"GenerateDSYMFile build/Release/volume.dSYM build/Release/volume326622869#326622870#0(0"0(0#0#67"/Users/roberto/Applications/brainbits/v.volume/build/Release/volume4300911832#230"    cd /Users/roberto/Applications/brainbits/v.volume    /Developer/usr/bin/dsymutil /Users/roberto/Applications/brainbits/v.volume/build/Release/volume -o /Users/roberto/Applications/brainbits/v.volume/build/Release/volume.dSYM0#
+
+CLd /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume normal i386
+s326622869.864983
+e326622869.927396
+r1
+xLd
+x/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume
+xnormal
+xi386
+old: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -L not found
+old: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -F not found
+lSLF07#2@118"Link /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume326622869#326622869#0(218"ld: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -L not foundld: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -F not found2(22@95"Directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -L not found326622869#0#109#0(6@0"326622869#0#0#0#0#0"0(22@95"Directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -F not found326622869#109#109#0(6@0"326622869#0#0#0#0#0"0(0#0#0"4300911832#584"    cd /Users/roberto/Applications/brainbits/v.volume    setenv MACOSX_DEPLOYMENT_TARGET 10.5    /Developer/usr/bin/gcc-4.2 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk -L/Users/roberto/Applications/brainbits/v.volume/build/Release -F/Users/roberto/Applications/brainbits/v.volume/build/Release -filelist /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume.LinkFileList -mmacosx-version-min=10.5 -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/i386/volume0#
+
+CLd /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume normal ppc
+s326622869.344682
+e326622869.502119
+r1
+xLd
+x/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume
+xnormal
+xppc
+old: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -L not found
+old: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -F not found
+lSLF07#2@117"Link /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume326622869#326622869#0(218"ld: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -L not foundld: warning: directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -F not found2(22@95"Directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -L not found326622869#0#109#0(6@0"326622869#0#0#0#0#0"0(22@95"Directory '/Users/roberto/Applications/brainbits/v.volume/build/Release' following -F not found326622869#109#109#0(6@0"326622869#0#0#0#0#0"0(0#0#0"4300911832#581"    cd /Users/roberto/Applications/brainbits/v.volume    setenv MACOSX_DEPLOYMENT_TARGET 10.5    /Developer/usr/bin/gcc-4.2 -arch ppc -isysroot /Developer/SDKs/MacOSX10.5.sdk -L/Users/roberto/Applications/brainbits/v.volume/build/Release -F/Users/roberto/Applications/brainbits/v.volume/build/Release -filelist /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume.LinkFileList -mmacosx-version-min=10.5 -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Release/volume.build/Objects-normal/ppc/volume0#
+

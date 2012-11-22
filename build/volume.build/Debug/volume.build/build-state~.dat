@@ -1,0 +1,121 @@
+Tvolume
+v7
+r0
+t326621795.053533
+cCheck dependencies
+cCompileC build/volume.build/Debug/volume.build/Objects-normal/i386/main.o /Users/roberto/Applications/brainbits/v.volume/main.c normal i386 c com.apple.compilers.gcc.4_2
+cCompileC build/volume.build/Debug/volume.build/Objects-normal/i386/Analyze.o /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c normal i386 c com.apple.compilers.gcc.4_2
+cLd /Users/roberto/Applications/brainbits/v.volume/build/Debug/volume normal i386
+
+N/Developer/SDKs/MacOSX10.5.sdk
+c000000004B7D589B00000000000000EE
+t1266505883
+s238
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/math.h
+c0000000047BA987000000000000004B7
+t1203411056
+s1207
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/stdio.h
+c0000000047BA99310000000000003D1D
+t1203411249
+s15645
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/stdlib.h
+c0000000047BA99310000000000002A79
+t1203411249
+s10873
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/string.h
+c0000000047BA99320000000000001731
+t1203411250
+s5937
+
+N/Users/roberto/Applications/brainbits/RAMONES/Analyze.h
+c000000004C51479C0000000000000A3E
+t1280395164
+s2622
+i<stdlib.h>
+i<stdio.h>
+i<string.h>
+
+N/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c
+c000000004AFBDDD400000000000011F6
+t1258020308
+s4598
+i"Analyze.h"
+
+N/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.h
+c000000004C51479C0000000000000A3E
+t1280395164
+s2622
+i<stdlib.h>
+i<stdio.h>
+i<string.h>
+
+N/Users/roberto/Applications/brainbits/v.volume/build/Debug/volume
+t1304928995
+s24864
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/Objects-normal/i386/Analyze.o
+t1304927111
+s11268
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/Objects-normal/i386/main.o
+t1304928995
+s23584
+
+N/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/Objects-normal/i386/volume.LinkFileList
+c000000004DC79B8700000000000000E3
+t1304927111
+s227
+
+N/Users/roberto/Applications/brainbits/v.volume/main.c
+c000000004DC7A2E2000000000000298B
+t1304928994
+s10635
+i<stdio.h>
+i"Analyze.h"
+i"math.h"
+
+CCheck dependencies
+r0
+lSLF07#2@18"Check dependencies326621794#326621794#0(0"0(0#1#0"4300911832#0"0#
+
+CCompileC build/volume.build/Debug/volume.build/Objects-normal/i386/Analyze.o /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c normal i386 c com.apple.compilers.gcc.4_2
+s326619911.089121
+e326619911.166934
+r1
+xCompileC
+xbuild/volume.build/Debug/volume.build/Objects-normal/i386/Analyze.o
+x/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@75"Compile /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c326619911#326619911#0(0"0(0#0#67"/Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c4300911832#961"    cd /Users/roberto/Applications/brainbits/v.volume    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -fasm-blocks -O0 -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.5.sdk -mfix-and-continue -mmacosx-version-min=10.5 -gdwarf-2 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/volume.hmap -F/Users/roberto/Applications/brainbits/v.volume/build/Debug -I/Users/roberto/Applications/brainbits/v.volume/build/Debug/include -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/DerivedSources/i386 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/DerivedSources -c /Users/roberto/Applications/brainbits/v.volume/../RAMONES/Analyze.c -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/Objects-normal/i386/Analyze.o0#
+
+CCompileC build/volume.build/Debug/volume.build/Objects-normal/i386/main.o /Users/roberto/Applications/brainbits/v.volume/main.c normal i386 c com.apple.compilers.gcc.4_2
+s326621794.909710
+e326621795.035003
+r1
+xCompileC
+xbuild/volume.build/Debug/volume.build/Objects-normal/i386/main.o
+x/Users/roberto/Applications/brainbits/v.volume/main.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@61"Compile /Users/roberto/Applications/brainbits/v.volume/main.c326621794#326621795#0(0"0(0#0#53"/Users/roberto/Applications/brainbits/v.volume/main.c4300911832#944"    cd /Users/roberto/Applications/brainbits/v.volume    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -fasm-blocks -O0 -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.5.sdk -mfix-and-continue -mmacosx-version-min=10.5 -gdwarf-2 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/volume.hmap -F/Users/roberto/Applications/brainbits/v.volume/build/Debug -I/Users/roberto/Applications/brainbits/v.volume/build/Debug/include -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/DerivedSources/i386 -I/Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/DerivedSources -c /Users/roberto/Applications/brainbits/v.volume/main.c -o /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/Objects-normal/i386/main.o0#
+
+CLd /Users/roberto/Applications/brainbits/v.volume/build/Debug/volume normal i386
+s326621795.035142
+e326621795.053478
+r1
+xLd
+x/Users/roberto/Applications/brainbits/v.volume/build/Debug/volume
+xnormal
+xi386
+lSLF07#2@70"Link /Users/roberto/Applications/brainbits/v.volume/build/Debug/volume326621795#326621795#0(0"0(0#0#0"4300911832#530"    cd /Users/roberto/Applications/brainbits/v.volume    setenv MACOSX_DEPLOYMENT_TARGET 10.5    /Developer/usr/bin/gcc-4.2 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk -L/Users/roberto/Applications/brainbits/v.volume/build/Debug -F/Users/roberto/Applications/brainbits/v.volume/build/Debug -filelist /Users/roberto/Applications/brainbits/v.volume/build/volume.build/Debug/volume.build/Objects-normal/i386/volume.LinkFileList -mmacosx-version-min=10.5 -o /Users/roberto/Applications/brainbits/v.volume/build/Debug/volume0#
+
