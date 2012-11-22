@@ -707,7 +707,7 @@ int loadVolume_MGZ(char *path)
 	char	*addr;
 	int		sz;
 	
-	MGH_load_GZ(path,&addr,&sz,endianness);
+	MGH_load_GZ(path,&addr,&sz);
 	hdr=(AnalyzeHeader*)addr;
 	img=(char*)(addr+sizeof(AnalyzeHeader));
 	dim[0]=hdr->dim[1];

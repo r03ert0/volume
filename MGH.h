@@ -14,6 +14,7 @@
 #include "Analyze.h"
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #define kORIG	1
 #define kNU		2
@@ -53,5 +54,6 @@ typedef struct
 }MGHHeader;
 
 void MGH_load(char *path, char **vol,int *sz, int volumeType);
+void MGH_load_GZ(char *path, char **vol,int *sz);
 
 #endif
