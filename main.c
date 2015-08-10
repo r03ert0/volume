@@ -1,19 +1,39 @@
-char	version[]="volume, v2, roberto toro, 10 December 2010";	// added -decompose
+//char	version[]="volume, v2, roberto toro, 10 December 2010";	// added -decompose
+//char	version[]="volume, v3, roberto toro, 9 August 2015";	// added support to nii and nii.gz
+char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets for isosurface extraction
 
 #include <stdio.h>
 #include "Analyze.h"
 #include "MGH.h"
+#include "Nifti.h"
 #include "math.h"
+#include "limits.h"
 #include <unistd.h>
 
 #define MAX(x,y) (((x)>(y))?(x):(y))
+#define pi 3.1415926535897932384626433832795028841971
 
 #define kAnalyzeVolume	1
 #define kMGZVolume		2
+#define kNiftiVolume	3
+#define kNiftiGZVolume	4
+
+typedef struct {
+    float x,y,z;
+} float3D;
+typedef struct {
+    int a,b,c;
+} int3D;
+typedef struct {
+    int np,nt;
+    float3D *p;
+    int3D *t;
+} Mesh;
 
 AnalyzeHeader	*hdr;
 char			*img;
 int				dim[4];
+float           voxdim[4];
 int				verbose=1;
 
 void threshold(float value, int direction);
@@ -38,6 +58,27 @@ float getValue(int x, int y, int z)
 		}
 	}
 	return val;
+}
+float getValue1(int index)
+{
+    float		val;
+    RGBValue	rgb;
+    
+    if(hdr->datatype==RGB)
+    {
+        rgb=((RGBValue*)img)[index];
+        val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+    }
+    else
+    {
+        switch(hdr->datatype)
+        {	case UCHAR: val=((unsigned char*)img)[index];	break;
+            case SHORT: val=        ((short*)img)[index];	break;
+            case INT:	val=          ((int*)img)[index];	break;
+            case FLOAT:	val=        ((float*)img)[index];	break;
+        }
+    }
+    return val;
 }
 
 void setValue(float val, int x, int y, int z)
@@ -237,6 +278,7 @@ void dilate(int r)
 }
 void erode(int r)
 {
+    printf("[erode]\n");
 	int		i,j,k;
 	int		a,b,c;
 	char	*tmp=calloc(dim[0]*dim[1]*dim[2],1);
@@ -300,6 +342,280 @@ float min(void)
 					min=val;
 			}
 	return min;
+}
+
+void compress_dct_1d(float *in, float *out, int N)
+{
+	int n,k;
+
+	for(k=0;k<N;k++)
+	{
+		float z=0;
+		for(n=0;n<N;n++)
+			z+=in[n]*cos(pi*(2*n+1)*k/(float)(2*N));
+		out[k]=z*((k==0)?1/sqrt(N):sqrt(2/(float)N));
+	}
+}
+void compress_idct_1d(float *in, float *out, int N)
+{
+	int n,k;
+
+	for(n=0;n<N;n++)
+	{
+		float z=0;
+		for(k=0;k<N;k++)
+			z+=((k==0)?1/sqrt(N):sqrt(2/(float)N))*in[k]*cos(pi*(2*n+1)*k/(float)(2*N));
+		out[n]=z;
+	}
+}
+void compress_dct(float *vol,float *coeff,int *d)
+{
+	int i,j,k;
+	float *in,*out;
+    int max;
+    
+    max=(d[0]>d[1])?d[0]:d[1];
+    max=(d[2]>max)?d[2]:max;
+    in=(float*)calloc(max,sizeof(float));
+    out=(float*)calloc(max,sizeof(float));
+	
+    for(i=0;i<d[0];i++)
+	for(j=0;j<d[1];j++)
+	{
+		for(k=0;k<d[2];k++)
+			in[k]=vol[k*d[1]*d[0]+j*d[0]+i];
+		compress_dct_1d(in,out,d[2]);
+		for(k=0;k<d[2];k++)
+			coeff[k*d[1]*d[0]+j*d[0]+i]=out[k];
+	}
+
+	for(j=0;j<d[1];j++)
+	for(k=0;k<d[2];k++)
+	{
+		for(i=0;i<d[0];i++)
+			in[i]=coeff[k*d[1]*d[0]+j*d[0]+i];
+		compress_dct_1d(in,out,d[0]);
+		for(i=0;i<d[0];i++)
+			coeff[k*d[1]*d[0]+j*d[0]+i]=out[i];
+	}
+
+	for(k=0;k<d[2];k++)
+	for(i=0;i<d[0];i++)
+	{
+		for(j=0;j<d[1];j++)
+			in[j]=coeff[k*d[1]*d[0]+j*d[0]+i];
+		compress_dct_1d(in, out,d[1]);
+		for(j=0;j<d[1];j++)
+			coeff[k*d[1]*d[0]+j*d[0]+i]=out[j];
+	}
+    
+    free(in);
+    free(out);
+}
+void compress_idct(float *vol,float *coeff,int *d)
+{
+	int i,j,k;
+	float *in,*out;
+    int max;
+    
+    max=(d[0]>d[1])?d[0]:d[1];
+    max=(d[2]>max)?d[2]:max;
+    in=(float*)calloc(max,sizeof(float));
+    out=(float*)calloc(max,sizeof(float));
+	
+	for(i=0;i<d[0];i++)
+	for(j=0;j<d[1];j++)
+	{
+		for(k=0;k<d[2];k++)
+			in[k]=vol[k*d[1]*d[0]+j*d[0]+i];
+		compress_idct_1d(in, out,d[2]);
+		for(k=0;k<d[2];k++)
+			coeff[k*d[1]*d[0]+j*d[0]+i]=out[k];
+	}
+
+	for(j=0;j<d[1];j++)
+	for(k=0;k<d[2];k++)
+	{
+		for(i=0;i<d[0];i++)
+			in[i]=coeff[k*d[1]*d[0]+j*d[0]+i];
+		compress_idct_1d(in, out,d[0]);
+		for(i=0;i<d[0];i++)
+			coeff[k*d[1]*d[0]+j*d[0]+i]=out[i];
+	}
+
+	for(k=0;k<d[2];k++)
+	for(i=0;i<d[0];i++)
+	{
+		for(j=0;j<d[1];j++)
+			in[j]=coeff[k*d[1]*d[0]+j*d[0]+i];
+		compress_idct_1d(in, out,d[1]);
+		for(j=0;j<d[1];j++)
+			coeff[k*d[1]*d[0]+j*d[0]+i]=out[j];
+	}
+
+    free(in);
+    free(out);
+}
+void compress(float rate, char *coefffile)
+{
+	// based on code by Emil Mikulic at http://unix4lyfe.org/dct
+	float	*tmp,*coeff;
+	int		i,j,k,n=0;
+	
+    /*
+    float   x[]={1,2,1,0,1,2,3,1},y[8];
+    coeff=(float*)calloc(8,sizeof(float));
+    compress_dct_1d(x,coeff,8);
+    compress_idct_1d(coeff,y,8);
+    */
+    
+    // change dimensions to multiple of 8
+	tmp=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+	coeff=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+	for(i=0;i<dim[0];i++)
+	for(j=0;j<dim[1];j++)
+	for(k=0;k<dim[2];k++)
+		tmp[k*dim[1]*dim[0]+j*dim[0]+i]=getValue(i,j,k);
+	
+	// dct
+	compress_dct(tmp,coeff,dim);
+	
+	// compress at rate
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        if(i*i+j*j+k*k>20*20)
+            coeff[k*dim[1]*dim[0]+j*dim[0]+i]=0;
+        else
+            n++;
+    }
+    printf("%i non-zero coefficients\n",n);
+    
+	// idct
+	compress_idct(coeff,tmp,dim);
+	
+	// save coefficients at coeff
+	
+	// change volume to compressed version
+	for(i=0;i<dim[0];i++)
+	for(j=0;j<dim[1];j++)
+	for(k=0;k<dim[2];k++)
+		setValue(tmp[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
+	
+	free(tmp);
+    free(coeff);
+}
+int convert(char *dtype)
+{
+    float           min,max,val;
+    int             i,j,k,sz;
+    char            *addr0,*img0;
+    
+    // find min max
+    min=max=getValue(0,0,0);
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        val=getValue(i,j,k);
+        min=(val<min)?val:min;
+        max=(val>max)?val:max;
+    }
+
+    if(strcmp(dtype,"uchar")==0)
+    {
+        if(min<0 || max>UCHAR_MAX)
+            printf("WARNING: The original values are beyond the limits of UCHAR encoding. Values will be remaped.\n");
+
+        sz=sizeof(char);
+        img0=calloc(dim[0]*dim[1]*dim[2],sz);
+        for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+        for(k=0;k<dim[2];k++)
+        {
+            val=getValue(i,j,k);
+            if(min<0 || max>UCHAR_MAX)
+                val=UCHAR_MAX*(val-min)/(max-min);
+            ((unsigned char*)img0)[k*dim[1]*dim[0]+j*dim[0]+i]=(unsigned char)val;
+        }
+        hdr->datatype=UCHAR;
+    }
+    else
+    if(strcmp(dtype,"short")==0)
+    {
+        if(min<SHRT_MIN || max>SHRT_MAX)
+            printf("WARNING: The original values are beyond the limits of SHORT encoding. Values will be remaped.\n");
+
+        sz=sizeof(short);
+        img0=calloc(dim[0]*dim[1]*dim[2],sz);
+        for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+        for(k=0;k<dim[2];k++)
+        {
+            val=getValue(i,j,k);
+            if(min<SHRT_MIN || max>SHRT_MAX)
+            {
+                val=(val-min)/(max-min);
+                val=SHRT_MIN*(1-val)+SHRT_MAX*val;
+            }
+            
+            ((short*)img0)[k*dim[1]*dim[0]+j*dim[0]+i]=(short)val;
+        }
+        hdr->datatype=SHORT;
+    }
+    else
+    if(strcmp(dtype,"int")==0)
+    {
+        if(min<INT_MIN || max>INT_MAX)
+            printf("WARNING: The original values are beyond the limits of INT encoding. Values will be remaped.\n");
+
+        sz=sizeof(int);
+        img0=calloc(dim[0]*dim[1]*dim[2],sz);
+        for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+        for(k=0;k<dim[2];k++)
+        {
+            val=getValue(i,j,k);
+            if(min<INT_MIN || max>INT_MAX)
+            {
+                val=(val-min)/(max-min);
+                val=INT_MIN*(1-val)+INT_MAX*val;
+            }
+            ((int*)img0)[k*dim[1]*dim[0]+j*dim[0]+i]=(int)val;
+        }
+        hdr->datatype=INT;
+    }
+    else
+    if(strcmp(dtype,"float")==0)
+    {
+        sz=sizeof(float);
+        img0=calloc(dim[0]*dim[1]*dim[2],sz);
+        for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+        for(k=0;k<dim[2];k++)
+        {
+            val=getValue(i,j,k);
+            ((float*)img0)[k*dim[1]*dim[0]+j*dim[0]+i]=(float)val;
+        }
+        hdr->datatype=FLOAT;
+    }
+    else
+    {
+        printf("ERROR: Unknown format %s. Select among uchar, short, int or float\n",dtype);
+        return 1;
+    }
+    
+    addr0=calloc(dim[0]*dim[1]*dim[2]*sz+sizeof(AnalyzeHeader),sizeof(char));
+    memcpy(addr0,(char*)hdr,sizeof(AnalyzeHeader));
+    memcpy(addr0+sizeof(AnalyzeHeader),img0,dim[0]*dim[1]*dim[2]*sz);
+    
+    free((char*)hdr);
+    free(img0);
+    hdr=(AnalyzeHeader*)addr0;
+    img=(char*)((char*)hdr+sizeof(AnalyzeHeader));
+    
+    return 0;
 }
 void hist(int nbins)
 {
@@ -455,6 +771,65 @@ void tiff(char *path, float *m, int W, int H, char *cmapindex)
 	}
 	fclose(f);
 	
+}
+void drawSlice(char *path, char *cmap, char *ori)
+{
+    float	*m;
+    int     x,y,z;
+    float   val,min,max;
+    
+    switch(ori[0])
+    {
+        case 'x':
+            x=dim[0]/2;
+            m=(float*)calloc(dim[1]*dim[2],sizeof(float));
+            min=max=getValue(x,0,0);
+            for(y=0;y<dim[1];y++)
+            for(z=0;z<dim[2];z++)
+            {
+                val=getValue(x,y,z);
+                min=(val<min)?val:min;
+                max=(val>max)?val:max;
+            }
+            for(y=0;y<dim[1];y++)
+                for(z=0;z<dim[2];z++)
+                    m[z*dim[1]+y]=255*(getValue(x,y,z)-min)/(max-min);
+            tiff(path,m,dim[1],dim[2],cmap);
+            break;
+        case 'y':
+            y=dim[1]/2;
+            m=(float*)calloc(dim[0]*dim[2],sizeof(float));
+            min=max=getValue(0,y,0);
+            for(x=0;x<dim[0];x++)
+            for(z=0;z<dim[2];z++)
+            {
+                val=getValue(x,y,z);
+                min=(val<min)?val:min;
+                max=(val>max)?val:max;
+            }
+            for(x=0;x<dim[0];x++)
+                for(z=0;z<dim[2];z++)
+                    m[z*dim[0]+x]=255*(getValue(x,y,z)-min)/(max-min);
+            tiff(path,m,dim[0],dim[2],cmap);
+            break;
+        case 'z':
+            z=dim[2]/2;
+            m=(float*)calloc(dim[0]*dim[1],sizeof(float));
+            min=max=getValue(0,0,z);
+            for(x=0;x<dim[0];x++)
+            for(y=0;y<dim[1];y++)
+            {
+                val=getValue(x,y,z);
+                min=(val<min)?val:min;
+                max=(val>max)?val:max;
+            }
+            for(x=0;x<dim[0];x++)
+                for(y=0;y<dim[1];y++)
+                    m[y*dim[0]+x]=255*(getValue(x,y,z)-min)/(max-min);
+            tiff(path,m,dim[0],dim[1],cmap);
+            break;
+    }
+    free(m);
 }
 float volume(void)
 {
@@ -616,12 +991,253 @@ void matchHistogram(char *volpath)
 	for(i=0;i<n;i++)
 		setValue2(trans[(int)getValue2(i,hdr,img)],i,hdr,img);
 }
+void zigzag(void)
+{
+    int m,n=0;
+    int d[]={0,0,0};
+    int s;
+
+    m=(dim[0]>dim[1])?dim[0]:dim[1];
+    m=(dim[2]>m)?dim[2]:m;
+
+    for(s=0;s<=m*3;s++)
+    {
+        for(d[0]=s;d[0]>=0;d[0]--)
+            if(d[0]%2==0)
+                for(d[1]=0;d[1]<=s-d[0];d[1]++)
+                {
+                    d[2]=s-d[0]-d[1];
+                    if(d[(0-s+m*3)%3]<dim[0]&&
+                       d[(1-s+m*3)%3]<dim[1]&&
+                       d[(2-s+m*3)%3]<dim[2])
+                    {
+                        printf("%f ",getValue(d[(0-s+m*3)%3],d[(1-s+m*3)%3],d[(2-s+m*3)%3]));
+                        if(n>5000)
+                            setValue(0,d[(0-s+m*3)%3],d[(1-s+m*3)%3],d[(2-s+m*3)%3]);
+                        n++;
+                    }
+                }
+            else
+                for(d[1]=s-d[0];d[1]>=0;d[1]--)
+                {
+                    d[2]=s-d[0]-d[1];
+                    if(d[(0-s+m*3)%3]<dim[0]&&
+                       d[(1-s+m*3)%3]<dim[1]&&
+                       d[(2-s+m*3)%3]<dim[2])
+                    {
+                        printf("%f ",getValue(d[(0-s+m*3)%3],d[(1-s+m*3)%3],d[(2-s+m*3)%3]));
+                        if(n>5000)
+                            setValue(0,d[(0-s+m*3)%3],d[(1-s+m*3)%3],d[(2-s+m*3)%3]);
+                        n++;
+                    }
+                }
+    }
+    printf("\n");
+}
+void strokeMesh(char *path)
+{
+    FILE    *f;
+    char    str[1024];
+    int     np,i;
+    float   mx,x,y,z;
+    
+    mx=max();
+    
+    f=fopen(path,"r");
+    fgets(str,1024,f);
+    sscanf(str," %i %*i ",&np);
+    for(i=0;i<np;i++)
+    {
+        fgets(str,1024,f);
+        sscanf(str," %f %f %f ",&x,&y,&z);
+        x/=hdr->pixdim[1];
+        y/=hdr->pixdim[2];
+        z/=hdr->pixdim[3];
+        if(x<0||x>=dim[0]||y<0||y>=dim[1]||z<0||z>=dim[2])
+        {
+            printf("ERROR: mesh out of volume bounds\n");
+            break;
+        }
+        setValue(mx+1,(int)(x+0.5),(int)(y+0.5),(int)(z+0.5));
+    }
+}
+
+int cube_edges[24];
+int edge_table[256];
+int buffer[4096];
+void surfaceNets_init(void)
+{
+    int i,j,p,em,k = 0;
+    for(i=0; i<8; ++i) {
+        for(j=1; j<=4; j=j<<1) {
+            p = i^j;
+            if(i <= p) {
+                cube_edges[k++] = i;
+                cube_edges[k++] = p;
+            }
+        }
+    }
+    for(i=0; i<256; ++i) {
+        em = 0;
+        for(j=0; j<24; j+=2) {
+            int a = !(i & (1<<cube_edges[j]));	// was !!, which in js turns into boolean false null, undefined, etc
+            int b = !(i & (1<<cube_edges[j+1]));
+            em |= a != b ? (1 << (j >> 1)) : 0; // was !==
+        }
+        edge_table[i] = em;
+    }
+}
+void surfaceNets(float level, Mesh *mesh, int storeFlag)
+{
+    float3D *vertices=mesh->p;
+    int3D *faces=mesh->t;
+    int n = 0;
+    float x[3];
+    int R[3];
+    float *grid = (float*)calloc(8,sizeof(float));
+    int buf_no = 1;
+    int *buffer;
+    int buffer_length=0;
+    int vertices_length=0;
+    int faces_length=0;
+    int	i,j,k;
+    
+    R[0]=1;
+    R[1]=dim[0]+1;
+    R[2]=(dim[0]+1)*(dim[1]+1);
+    
+    if(R[2] * 2 > buffer_length)
+        buffer = (int*)calloc(R[2] * 2,sizeof(int));
+    
+    for(x[2]=0; x[2]<dim[2]-1; ++x[2])
+    {
+        n+=dim[0];
+        buf_no ^= 1;
+        R[2]=-R[2];
+        
+        int m = 1 + (dim[0]+1) * (1 + buf_no * (dim[1]+1));
+        for(x[1]=0; x[1]<dim[1]-1; ++x[1], ++n, m+=2)
+            for(x[0]=0; x[0]<dim[0]-1; ++x[0], ++n, ++m)
+            {
+                int mask = 0, g = 0, idx = n;
+                for(k=0; k<2; ++k, idx += dim[0]*(dim[1]-2))
+                    for(j=0; j<2; ++j, idx += dim[0]-2)
+                        for(i=0; i<2; ++i, ++g, ++idx)
+                        {
+                            float p = getValue1(idx)-level;
+                            grid[g] = p;
+                            mask |= (p < 0) ? (1<<g) : 0;
+                        }
+                if(mask == 0 || mask == 0xff)
+                    continue;
+                int edge_mask = edge_table[mask];
+                float3D v = {0.0,0.0,0.0};
+                int e_count = 0;
+                for(i=0; i<12; ++i)
+                {
+                    if(!(edge_mask & (1<<i)))
+                        continue;
+                    ++e_count;
+                    int e0 = cube_edges[ i<<1 ];       //Unpack vertices
+                    int e1 = cube_edges[(i<<1)+1];
+                    float g0 = grid[e0];                 //Unpack grid values
+                    float g1 = grid[e1];
+                    float t  = g0 - g1;                  //Compute point of intersection
+                    if(fabs(t) > 1e-6)
+                        t = g0 / t;
+                    else
+                        continue;
+                    k=1;
+                    for(j=0; j<3; ++j)
+                    {
+                        k=k<<1;
+                        int a = e0 & k;
+                        int b = e1 & k;
+                        if(a != b)
+                            ((float*)&v)[j] += a ? 1.0 - t : t;
+                        else
+                            ((float*)&v)[j] += a ? 1.0 : 0;
+                    }
+                }
+                float s = 1.0 / e_count;
+                for(i=0; i<3; ++i)
+                    ((float*)&v)[i] = x[i] + s * ((float*)&v)[i];
+                buffer[m] = vertices_length;
+                if(storeFlag)
+                    vertices[vertices_length++]=v;
+                else
+                    vertices_length++;
+                for(i=0; i<3; ++i)
+                {
+                    if(!(edge_mask & (1<<i)) )
+                        continue;
+                    int iu = (i+1)%3;
+                    int iv = (i+2)%3;
+                    if(x[iu] == 0 || x[iv] == 0)
+                        continue;
+                    int du = R[iu];
+                    int dv = R[iv];
+                    
+                    if(storeFlag)
+                    {
+                        if(mask & 1)
+                        {
+                            faces[faces_length++]=(int3D){buffer[m], buffer[m-du-dv], buffer[m-du]};
+                            faces[faces_length++]=(int3D){buffer[m], buffer[m-dv], buffer[m-du-dv]};
+                        }
+                        else
+                        {
+                            faces[faces_length++]=(int3D){buffer[m], buffer[m-du-dv], buffer[m-dv]};
+                            faces[faces_length++]=(int3D){buffer[m], buffer[m-du], buffer[m-du-dv]};
+                        }
+                    }
+                    else
+                        faces_length+=2;
+                }
+            }
+    }
+    mesh->np=vertices_length;
+    mesh->nt=faces_length;
+}
+
+void sampleMesh(char *mesh,char *result)
+{
+    FILE    *f1,*f2;
+    char    str[1024];
+    int     np,i;
+    float   mx,x,y,z,val;
+    
+    mx=max();
+    
+    f1=fopen(mesh,"r");
+    f2=fopen(result,"w");
+    fgets(str,1024,f1);
+    sscanf(str," %i %*i ",&np);
+    fprintf(f2,"%i %i\n",np,1);
+    for(i=0;i<np;i++)
+    {
+        fgets(str,1024,f1);
+        sscanf(str," %f %f %f ",&x,&y,&z);
+        x/=hdr->pixdim[1];
+        y/=hdr->pixdim[2];
+        z/=hdr->pixdim[3];
+        if(x<0||x>=dim[0]||y<0||y>=dim[1]||z<0||z>=dim[2])
+        {
+            printf("ERROR: mesh out of volume bounds\n");
+            break;
+        }
+        val=getValue((int)(x+0.5),(int)(y+0.5),(int)(z+0.5));
+        fprintf(f2,"%f\n",val);
+    }
+    fclose(f1);
+    fclose(f2);
+}
 #pragma mark -
 #pragma mark [ Format conversion ]
 int getformatindex(char *path)
 {
-    char    *formats[]={"hdr","img","mgz"};
-    int     i,j,n=3; // number of recognised formats
+    char    *formats[]={"hdr","img","mgz","nii","gz"};
+    int     i,j,n=5; // number of recognised formats
     int     found,index;
     char    *extension;
     
@@ -651,13 +1267,27 @@ int getformatindex(char *path)
             printf("Format: Analyze volume\n");
     }
     else
-	if(i==2)
-	{
-		index=kMGZVolume;
-		if(verbose)
-			printf("Format: MGZ volume\n");
-	}
-	else
+    if(i==2)
+    {
+        index=kMGZVolume;
+        if(verbose)
+            printf("Format: MGZ volume\n");
+    }
+    else
+    if(i==3)
+    {
+        index=kNiftiVolume;
+        if(verbose)
+            printf("Format: Nifti volume\n");
+    }
+    else
+    if(i==4)
+    {
+        index=kNiftiGZVolume;
+        if(verbose)
+            printf("Format: NiftiGZ volume\n");
+    }
+    else
 	{
 		printf("ERROR: unrecognized format \"%s\"\n",extension);
 		return 0;
@@ -675,15 +1305,22 @@ int loadVolume_Analyze(char *path)
 	strcpy(base,path);
 	for(i=strlen(base);i>=0;i--)
 		if(base[i]=='.')
+        {
 			base[i]=(char)0;
+            break;
+        }
 	sprintf(path,"%s.hdr",base);
+	printf("Loading hdr at %s\n",path);
 	Analyze_load(path,&addr,&sz,&swapped);
 	hdr=(AnalyzeHeader*)addr;
 	img=(char*)(addr+sizeof(AnalyzeHeader));
 	dim[0]=hdr->dim[1];
 	dim[1]=hdr->dim[2];
 	dim[2]=hdr->dim[3];
-	
+	voxdim[0]=hdr->pixdim[1];
+	voxdim[1]=hdr->pixdim[2];
+	voxdim[2]=hdr->pixdim[3];
+    
 	return 0;
 }
 int saveVolume_Analyze(char *path)
@@ -694,31 +1331,104 @@ int saveVolume_Analyze(char *path)
 	strcpy(base,path);
 	for(i=strlen(base);i>=0;i--)
 		if(base[i]=='.')
+        {
 			base[i]=(char)0;
+            break;
+        }
 	sprintf(path,"%s.hdr",base);
+	printf("Saving hdr to %s\n",path);
 	Analyze_save_hdr(path,*hdr);
 	sprintf(path,"%s.img",base);
+	printf("Saving img to %s\n",path);
 	Analyze_save_img(path,*hdr,img);
 	
 	return 0;
 }
 int loadVolume_MGZ(char *path)
 {
-	char	*addr;
-	int		sz;
-	
-	MGH_load_GZ(path,&addr,&sz);
-	hdr=(AnalyzeHeader*)addr;
-	img=(char*)(addr+sizeof(AnalyzeHeader));
-	dim[0]=hdr->dim[1];
-	dim[1]=hdr->dim[2];
-	dim[2]=hdr->dim[3];
-
-	return 0;
+    char	*addr;
+    int		sz;
+    
+    MGH_load_GZ(path,&addr,&sz);
+    hdr=(AnalyzeHeader*)addr;
+    img=(char*)(addr+sizeof(AnalyzeHeader));
+    dim[0]=hdr->dim[1];
+    dim[1]=hdr->dim[2];
+    dim[2]=hdr->dim[3];
+    
+    return 0;
 }
 int saveVolume_MGZ(char *path)
 {
-	return 0;
+    printf("Can't save MGZ yet...\n");
+    return 0;
+}
+int loadVolume_Nifti(char *path)
+{
+    char	*addr;
+    int		sz;
+    int		swapped;
+    
+    // load data
+    Nifti_load(path, &addr,&sz,&swapped);
+    hdr=(AnalyzeHeader*)addr;
+    img=(char*)(addr+sizeof(AnalyzeHeader));
+    dim[0]=hdr->dim[1];
+    dim[1]=hdr->dim[2];
+    dim[2]=hdr->dim[3];
+    return 0;
+}
+int saveVolume_Nifti(char *path)
+{
+    char	*addr=(char*)hdr;
+    
+    Nifti_save((char*)path, addr);
+    
+    return 0;
+}
+int loadVolume_NiftiGZ(char *path)
+{
+    FILE *f;
+    char filename[4096]={0};
+    char cmd[4096];
+
+    // create temporary file name
+    if(getenv("TEMP")==NULL) strcat(filename,"/tmp");
+    else                     strcat(filename,getenv("TEMP"));
+    strcat(filename,"/nii.XXXXXX");
+    f=mkstemp(filename);
+    if((int)f==-1)
+    {
+        printf("Cannot create temporary file.\n");
+        return 1;
+    }
+    if(verbose)
+        printf("Tempname: %s\n",filename);
+    
+    // uncompress orig.mgz into a temporary .mgh file
+    sprintf(cmd,"gunzip -c %s > %s",path,filename);
+    system(cmd);
+    
+    // load temporary file
+    loadVolume_Nifti(filename);
+
+    // clean up
+    sprintf(cmd,"/bin/rm -r %s",filename);
+    system(cmd);
+
+    return 0;
+}
+int saveVolume_NiftiGZ(char *path)
+{
+    char	*addr=(char*)hdr;
+    char    cmd[4096];
+    
+    Nifti_save((char*)path, addr);
+    
+    sprintf(cmd,"/usr/bin/gzip -f %s;/bin/mv %s.gz %s",path,path,path);
+    system(cmd);
+
+    return 0;
 }
 int loadVolume(char *path)
 {
@@ -731,11 +1441,17 @@ int loadVolume(char *path)
 		case kAnalyzeVolume:
 			err=loadVolume_Analyze(path);
 			break;
-		case kMGZVolume:
-			err=loadVolume_MGZ(path);
-			break;
+        case kMGZVolume:
+            err=loadVolume_MGZ(path);
+            break;
+        case kNiftiVolume:
+            err=loadVolume_Nifti(path);
+            break;
+        case kNiftiGZVolume:
+            err=loadVolume_NiftiGZ(path);
+            break;
 		default:
-			printf("ERROR: Input mesh format not recognised\n");
+			printf("ERROR: Input volume format not recognised\n");
 			return 1;			
 	}
 	if(err!=0)
@@ -750,21 +1466,51 @@ int saveVolume(char *path)
 	int	format;
 	
 	format=getformatindex(path);
+    printf("[saveVolume] format index: %i\n",format);
 	
 	switch(format)
 	{
 		case kAnalyzeVolume:
 			saveVolume_Analyze(path);
 			break;
-		case kMGZVolume:
-			saveVolume_MGZ(path);
-			break;
+        case kMGZVolume:
+            saveVolume_MGZ(path);
+            break;
+        case kNiftiVolume:
+            saveVolume_Nifti(path);
+            break;
+        case kNiftiGZVolume:
+            saveVolume_NiftiGZ(path);
+            break;
 		default:
-			printf("ERROR: Output data format not recognised\n");
+			printf("ERROR: Output volume format not recognised\n");
 			break;
 	}
 	return 0;
 }
+
+
+/*
+-i str                          input volume
+-o  str                         output volume
+-largest6con                    largest 6 connected component
+-dilate int                     dilate(size)
+-erode  int                     erode(size)
+-compress   float str           cosinus transform compress rate coeff_file
+-hist   int                     hist(#bins)
+-matchHist  str                 matchHistogram(another_mri)
+-stats                          stats, returns mean, std, min, max
+-tiff   str str                 write slice as tiff file
+-info                           information: dimensions, data type, pixel size
+-threshold  float int           threshold(level,direction)
+-volume                         calculate volume
+-zigzag                         print volume values in zigzag order
+-decompose  str                 decompose(basename) a volume with many values into volumes with one single value
+-strokeMesh str                 set the vertices of the mesh (text format) at input path to value=max+1
+-surfaceNets level path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
+ -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
+*/
+
 #pragma mark -
 int main (int argc, const char * argv[])
 {
@@ -811,6 +1557,22 @@ int main (int argc, const char * argv[])
 			erode(size);
 		}
 		else
+        if(strcmp(argv[i],"-compress")==0)			// compress rate coeff_file
+        {
+            float		rate;
+            char		coeff[4096];
+            sscanf(argv[++i]," %f ",&rate);
+            sscanf(argv[++i]," %s ",coeff);
+            compress(rate,coeff);
+        }
+        else
+        if(strcmp(argv[i],"-convert")==0)			// convert data type to uchar, short, int or float
+        {
+            char		dtype[4096];
+            sscanf(argv[++i]," %s ",dtype);
+            convert(dtype);
+        }
+        else
 		if(strcmp(argv[i],"-hist")==0)				// hist(#bins)
 		{
 			int		nbins;
@@ -836,14 +1598,10 @@ int main (int argc, const char * argv[])
 		if(strcmp(argv[i],"-tiff")==0)				// write slice as tiff file
 		{
 			char	*path=(char*)argv[i+1];
-			char	*cmap=(char*)argv[i+2];
-			float	*m=(float*)calloc(dim[0]*dim[1],sizeof(float));
-			int		x=dim[0]/2,y,z;
-			for(y=0;y<dim[1];y++)
-				for(z=0;z<dim[2];z++)
-					m[z+y*dim[2]]=getValue(x,y,z);
-			tiff(path,m,dim[1],dim[2],cmap);
-			i+=2;
+            char	*cmap=(char*)argv[i+2];
+            char	*ori=(char*)argv[i+3];
+            drawSlice(path,cmap,ori);
+			i+=3;
 		}
 		else
 		if(strcmp(argv[i],"-info")==0)				// information: dimensions, data type, pixel size
@@ -869,16 +1627,54 @@ int main (int argc, const char * argv[])
 			threshold(level,direction);
 		}
 		else
-		if(strcmp(argv[i],"-volume")==0)				// calculate volume
-		{
-			float	vol=volume();
-			printf("volume=%g\n",vol);
-		}
-		else
+        if(strcmp(argv[i],"-volume")==0)				// calculate volume
+        {
+            float	vol=volume();
+            printf("volume=%g\n",vol);
+        }
+        else
+        if(strcmp(argv[i],"-zigzag")==0)				// print volume values in zigzag order
+        {
+            zigzag();
+        }
+        else
 		if(strcmp(argv[i],"-decompose")==0)		// decompose(basename) a volume with many values into volumes with one single value
 		{
 			decompose((char*)argv[++i]);
 		}
+        else
+        if(strcmp(argv[i],"-strokeMesh")==0)		// strokeMesh(path) set the vertices of the mesh (text format) at input path to value=max+1
+        {
+            strokeMesh((char*)argv[++i]);
+        }
+        else
+        if(strcmp(argv[i],"-surfaceNets")==0)		// extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
+        {
+            float level=atof(argv[++i]);
+            char *path=(char*)argv[++i];
+            Mesh	m;
+            FILE *f;
+            surfaceNets_init();
+            surfaceNets(level,&m,0);	// 1st pass: evaluate memory requirements
+            m.p=(float3D*)calloc(m.np,sizeof(float3D));
+            m.t=(int3D*)calloc(m.nt,sizeof(int3D));
+            surfaceNets(level,&m,1);	// 2nd pass: store vertices and triangles
+            
+            f=fopen(path,"w");
+            fprintf(f,"%i %i\n",m.np,m.nt);
+            for(i=0;i<m.np;i++)
+                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
+            for(i=0;i<m.nt;i++)
+                fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
+            fclose(f);
+        }
+        else
+        if(strcmp(argv[i],"-sampleMesh")==0)		// sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
+        {
+            char    *mesh_path=(char*)argv[++i];
+            char    *result_path=(char*)argv[++i];
+            sampleMesh(mesh_path,result_path);
+        }
 	}
     return 0;
 }
