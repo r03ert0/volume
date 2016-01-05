@@ -1663,7 +1663,7 @@ int main (int argc, const char * argv[])
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
             for(i=0;i<m.np;i++)
-                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
+                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
             for(i=0;i<m.nt;i++)
                 fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
             fclose(f);
