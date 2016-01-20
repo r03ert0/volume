@@ -1603,8 +1603,8 @@ int main (int argc, const char * argv[])
 		else
 		if(strcmp(argv[i],"-info")==0)				// information: dimensions, data type, pixel size
 		{
-			printf("dim %i,%i,%i\n",hdr->dim[1],hdr->dim[2],hdr->dim[3]);
-			printf("dataType ");
+            printf("dim: %i %i %i\n",hdr->dim[1],hdr->dim[2],hdr->dim[3]);
+			printf("dataType: ");
 			switch(hdr->datatype)
 			{	case UCHAR:		printf("uchar\n"); break;
 				case SHORT:		printf("short\n"); break;
@@ -1613,7 +1613,7 @@ int main (int argc, const char * argv[])
 				case RGB:		printf("rgb\n"); break;
 				case RGBFLOAT:	printf("rgbfloat\n"); break;
 			}
-			printf("voxelSize %g,%g,%g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+			printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
 		}
 		else
 		if(strcmp(argv[i],"-threshold")==0)				// threshold(level,direction)
