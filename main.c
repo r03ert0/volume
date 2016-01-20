@@ -1205,9 +1205,7 @@ void sampleMesh(char *mesh,char *result)
     FILE    *f1,*f2;
     char    str[1024];
     int     np,i;
-    float   mx,x,y,z,val;
-    
-    mx=max();
+    float   x,y,z,val;
     
     f1=fopen(mesh,"r");
     f2=fopen(result,"w");
@@ -1237,7 +1235,7 @@ void sampleMesh(char *mesh,char *result)
 int getformatindex(char *path)
 {
     char    *formats[]={"hdr","img","mgz","nii","gz"};
-    int     i,j,n=5; // number of recognised formats
+    int     i,n=5; // number of recognised formats
     int     found,index;
     char    *extension;
     
@@ -1253,7 +1251,6 @@ int getformatindex(char *path)
     
     for(i=0;i<n;i++)
     {
-        j=strlen(formats[i]);
         found=(strcmp(formats[i],extension)==0);
         if(found)
             break;
