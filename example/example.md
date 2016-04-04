@@ -26,3 +26,5 @@ $ ./meshgeometry_mac -i ~/Desktop/six.txt -fixNonmanifold -o ~/Desktop/six.ply
 ````
 
 4. Finally, we open this mesh in MeshLab to decimate (Quadratic Edge Collapse Decimation)it and smooth it (Taubin Smoothing). The result is the mesh six-smooth.ply
+
+<script src="https://embed.github.com/view/3d/r03ert0/volume/master/example/six-smooth.stl"></script>
