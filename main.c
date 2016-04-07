@@ -1111,10 +1111,6 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
     
     for(x[2]=0; x[2]<dim[2]-1; ++x[2])
     {
-        n+=dim[0];
-        buf_no ^= 1;
-        R[2]=-R[2];
-        
         int m = 1 + (dim[0]+1) * (1 + buf_no * (dim[1]+1));
         for(x[1]=0; x[1]<dim[1]-1; ++x[1], ++n, m+=2)
             for(x[0]=0; x[0]<dim[0]-1; ++x[0], ++n, ++m)
@@ -1150,13 +1146,13 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
                     k=1;
                     for(j=0; j<3; ++j)
                     {
-                        k=k<<1;
                         int a = e0 & k;
                         int b = e1 & k;
                         if(a != b)
                             ((float*)&v)[j] += a ? 1.0 - t : t;
                         else
                             ((float*)&v)[j] += a ? 1.0 : 0;
+                        k=k<<1;
                     }
                 }
                 float s = 1.0 / e_count;
@@ -1195,6 +1191,10 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
                         faces_length+=2;
                 }
             }
+        n+=dim[0];
+        buf_no ^= 1;
+        R[2]=-R[2];
+        
     }
     mesh->np=vertices_length;
     mesh->nt=faces_length;
