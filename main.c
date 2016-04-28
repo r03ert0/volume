@@ -35,6 +35,7 @@ char			*img;
 int				dim[4];
 float           voxdim[4];
 int				verbose=1;
+int				g_selectedVolume=0;
 
 void threshold(float value, int direction);
 
@@ -641,6 +642,20 @@ void hist(int nbins)
 	}
 	printf("\n");
 	free(hist);
+}
+void info(void)
+{
+	printf("dim: %i %i %i [%i]\n",hdr->dim[1],hdr->dim[2],hdr->dim[3],hdr->dim[4]);
+	printf("dataType: ");
+	switch(hdr->datatype)
+	{	case UCHAR:		printf("uchar\n"); break;
+		case SHORT:		printf("short\n"); break;
+		case FLOAT:		printf("float\n"); break;
+		case INT:		printf("int\n"); break;
+		case RGB:		printf("rgb\n"); break;
+		case RGBFLOAT:	printf("rgbfloat\n"); break;
+	}
+	printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
 }
 float mean(void)
 {
@@ -1368,7 +1383,7 @@ int loadVolume_Nifti(char *path)
     int		swapped;
     
     // load data
-    Nifti_load(path, &addr,&sz,&swapped);
+    Nifti_load(path,g_selectedVolume,&addr,&sz,&swapped);
     hdr=(AnalyzeHeader*)addr;
     img=(char*)(addr+sizeof(AnalyzeHeader));
     dim[0]=hdr->dim[1];
@@ -1491,6 +1506,7 @@ int saveVolume(char *path)
 /*
 -i str                          input volume
 -o  str                         output volume
+-selectVolume int				selects the n-th volume in a nifti file with many volumes	
 -largest6con                    largest 6 connected component
 -dilate int                     dilate(size)
 -erode  int                     erode(size)
@@ -1604,17 +1620,15 @@ int main (int argc, const char * argv[])
 		else
 		if(strcmp(argv[i],"-info")==0)				// information: dimensions, data type, pixel size
 		{
-            printf("dim: %i %i %i\n",hdr->dim[1],hdr->dim[2],hdr->dim[3]);
-			printf("dataType: ");
-			switch(hdr->datatype)
-			{	case UCHAR:		printf("uchar\n"); break;
-				case SHORT:		printf("short\n"); break;
-				case FLOAT:		printf("float\n"); break;
-				case INT:		printf("int\n"); break;
-				case RGB:		printf("rgb\n"); break;
-				case RGBFLOAT:	printf("rgbfloat\n"); break;
-			}
-			printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+            info();
+		}
+		else
+		if(strcmp(argv[i],"-selectVolume")==0)				// selectVolume(svol)
+		{
+			int		svol;
+			sscanf(argv[++i]," %i ",&svol);
+			
+            g_selectedVolume=svol;
 		}
 		else
 		if(strcmp(argv[i],"-threshold")==0)				// threshold(level,direction)
@@ -1672,6 +1686,10 @@ int main (int argc, const char * argv[])
             char    *mesh_path=(char*)argv[++i];
             char    *result_path=(char*)argv[++i];
             sampleMesh(mesh_path,result_path);
+        }
+        else
+        {
+        	printf("WARNING: unknown command '%s'\n",argv[i]);
         }
 	}
     return 0;
