@@ -28,7 +28,7 @@ int NiftiBytesPerVoxel(nifti_1_header hdr)
 	
 	return bpv;
 }
-void Nifti_load(char *path, char **addr,int *sz, int *swapped)
+void Nifti_load(char *path, int svol, char **addr,int *sz, int *swapped)
 {
 	nifti_1_header	hdr;
 	FILE	*f;
@@ -54,7 +54,9 @@ void Nifti_load(char *path, char **addr,int *sz, int *swapped)
 	*addr=calloc(*sz,1);
 	memcpy(*addr,&hdr,sizeof(hdr));
 	
-	fseek(f, hdr.vox_offset-sizeof(hdr),SEEK_CUR);
+	fseek(f, hdr.vox_offset-sizeof(hdr)
+		+ svol*size*NiftiBytesPerVoxel(hdr)
+	,SEEK_CUR);
 	
 	fread(*addr+sizeof(hdr),size,NiftiBytesPerVoxel(hdr),f);
 	fclose(f);
