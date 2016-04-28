@@ -689,7 +689,8 @@ void tiff(char *path, float *m, int W, int H, char *cmapindex)
 {
 	FILE	*f;
 	int		i,n,S;
-	unsigned char	hdr[]={	0x4d,0x4d,
+	unsigned char	hdr[]={
+		0x4d,0x4d,
 		0x00,0x2a,
 		0x00,0x00,0x00,0x08,
 		0x00,0x0d,														// declare 13 fields
@@ -1497,7 +1498,7 @@ int saveVolume(char *path)
 -hist   int                     hist(#bins)
 -matchHist  str                 matchHistogram(another_mri)
 -stats                          stats, returns mean, std, min, max
--tiff   str str                 write slice as tiff file
+-tiff   str str str             write slice as tiff file. Args: path, cmap, ori {x, y, z}
 -info                           information: dimensions, data type, pixel size
 -threshold  float int           threshold(level,direction)
 -volume                         calculate volume
