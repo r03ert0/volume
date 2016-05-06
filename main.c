@@ -698,6 +698,8 @@ void threshold(float value, int direction)
 		val=getValue(i,j,k);
 		if((val>=value && direction==1)||(val<=value && direction==0))
 			setValue(1,i,j,k);
+		else
+			setValue(0,i,j,k);
 	}
 }
 void tiff(char *path, float *m, int W, int H, char *cmapindex)
