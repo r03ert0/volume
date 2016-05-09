@@ -790,16 +790,34 @@ void tiff(char *path, float *m, int W, int H, char *cmapindex)
 	fclose(f);
 	
 }
-void drawSlice(char *path, char *cmap, char *ori)
+void drawSlice(char *path, char *cmap, char *ori, float slice)
 {
     float	*m;
     int     x,y,z;
     float   val,min,max;
     
+    int slicenb;
+    
+    if (floorf(slice) == slice){ //slice is an integer (considered as slice number)
+        slicenb=1;
+    } else {
+        slicenb=0;	//slice is a float (considered as percentage)
+    }
+    
     switch(ori[0])
     {
         case 'x':
-            x=dim[0]/2;
+            if (slice==-1){
+                x = dim[0]/2;
+            }else{
+                if(slicenb==1){
+                    x=(int)slice;
+                } else{
+                    if(slicenb==0){
+                        x=dim[0]*(slice-floorf(slice));
+                    }
+                }
+            }
             m=(float*)calloc(dim[1]*dim[2],sizeof(float));
             min=max=getValue(x,0,0);
             for(y=0;y<dim[1];y++)
@@ -815,7 +833,17 @@ void drawSlice(char *path, char *cmap, char *ori)
             tiff(path,m,dim[1],dim[2],cmap);
             break;
         case 'y':
-            y=dim[1]/2;
+            if (slice==-1){
+                y = dim[1]/2;
+            }else{
+                if(slicenb==1){
+                    y=(int)slice;
+                } else{
+                    if(slicenb==0){
+                        y=dim[0]*(slice-floorf(slice));
+                    }
+                }
+            }
             m=(float*)calloc(dim[0]*dim[2],sizeof(float));
             min=max=getValue(0,y,0);
             for(x=0;x<dim[0];x++)
@@ -831,7 +859,17 @@ void drawSlice(char *path, char *cmap, char *ori)
             tiff(path,m,dim[0],dim[2],cmap);
             break;
         case 'z':
-            z=dim[2]/2;
+            if (slice==-1){
+                z = dim[2]/2;
+            }else{
+                if(slicenb==1){
+                    z=(int)slice;
+                } else{
+                    if(slicenb==0){
+                        z=dim[0]*(slice-floorf(slice));
+                    }
+                }
+            }
             m=(float*)calloc(dim[0]*dim[1],sizeof(float));
             min=max=getValue(0,0,z);
             for(x=0;x<dim[0];x++)
@@ -1658,7 +1696,7 @@ int saveVolume(char *path)
 -hist   int                     hist(#bins)
 -matchHist  str                 matchHistogram(another_mri)
 -stats                          stats, returns mean, std, min, max
--tiff   str str str             write slice as tiff file. Args: path, cmap, ori {x, y, z}
+-tiff   str str str float       write slice as tiff file. Args: path, cmap, ori {x, y, z}, slice
 -info                           information: dimensions, data type, pixel size
 -threshold  float int           threshold(level,direction)
 -volume                         calculate volume
@@ -1755,11 +1793,27 @@ int main (int argc, const char * argv[])
 		else
 		if(strcmp(argv[i],"-tiff")==0)				// write slice as tiff file
 		{
-			char	*path=(char*)argv[i+1];
-            char	*cmap=(char*)argv[i+2];
-            char	*ori=(char*)argv[i+3];
-            drawSlice(path,cmap,ori);
-			i+=3;
+			char	*path;//[512]; //=(char*)argv[i+1];
+            char	*cmap;//[64]; //=(char*)argv[i+2];
+            char	*ori;//[64]; //=(char*)argv[i+3];
+            float	slice;
+            char    *strslice;
+            //sscanf(argv[i+4]," %f ",&slice);
+            
+            char    *str= (char*)argv[i+1];
+            
+            path = strtok(str,",");
+            cmap = strtok(NULL,",");
+            ori = strtok(NULL,",");
+            
+            strslice = strtok(NULL,",");
+            if(strslice !=NULL){
+                sscanf(strslice," %f ",&slice);
+            }else{
+                slice=-1;
+            }
+            drawSlice(path,cmap,ori,slice);
+            i+=1;
 		}
 		else
 		if(strcmp(argv[i],"-info")==0)				// information: dimensions, data type, pixel size
