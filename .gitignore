@@ -1,2 +1,22 @@
 
 build/
+
+Analyze.o
+
+*.o
+
+*.tif
+
+*.o
+
+*.xcuserstate
+
+*.xcscheme
+
+*.plist
+
+*.xcbkptlist
+
+*.pbxproj
+
+Nifti.o

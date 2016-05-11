@@ -628,12 +628,24 @@ void hist(int nbins)
 	
 	mi=min();
 	ma=max();
-	
+	printf("nbins %d\n ",nbins);
 	for(i=0;i<dim[0];i++)
 		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++)
-				hist[(int)((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi))]++;
-	
+			for(k=0;k<dim[2];k++){
+                float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
+				hist[(int)index]++;
+                //printf("%f ",index);
+            }
+    float delta = (ma-mi)/nbins;
+    printf("delta %f\n ",delta);
+    printf("min %d max %d \n",mi,ma);
+    printf("x: ");
+    for(i=0;i<nbins;i++)
+	{
+        printf("%f ",mi+delta*i);
+    }
+    printf("\n");
+    printf("y: ");
 	for(i=0;i<nbins;i++)
 	{
 		printf("%g",hist[i]);
