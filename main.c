@@ -312,6 +312,7 @@ void erode(int r)
 		setValue(0,i,j,k);
 	free(tmp);
 }
+
 float max(void)
 {
 	int		i,j,k;
@@ -638,7 +639,7 @@ void hist(int nbins)
             }
     float delta = (ma-mi)/nbins;
     printf("delta %f\n ",delta);
-    printf("min %d max %d \n",mi,ma);
+    printf("min %f max %f \n",mi,ma);
     printf("x: ");
     for(i=0;i<nbins;i++)
 	{
@@ -1696,6 +1697,93 @@ int saveVolume(char *path)
 	return 0;
 }
 
+void hist2(int nbins, char *path)
+{
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int				mask_dim[4];
+    float           mask_voxdim[4];
+    AnalyzeHeader	*tmp_hdr;
+    char			*tmp_img;
+    int				*tmp_dim;
+    float           *tmp_voxdim;
+    int             *tmp_g_selectedVolume;
+    
+    tmp_hdr=hdr;        //save data from -i temporarely
+    tmp_img=img;
+    tmp_dim=dim;
+    tmp_voxdim=voxdim;
+    tmp_g_selectedVolume=g_selectedVolume;
+    
+    g_selectedVolume=0;
+    loadVolume(path);       //load mask in the global variables
+    mask_hdr=hdr;           //copy global variables in local variables
+    mask_img=img;
+    mask_dim[0]=dim[0];
+    mask_dim[1]=dim[1];
+    mask_dim[2]=dim[2];
+    mask_dim[3]=dim[3];
+    mask_voxdim[0]=voxdim[0];
+    mask_voxdim[1]=voxdim[1];
+    mask_voxdim[2]=voxdim[2];
+    mask_voxdim[3]=voxdim[3];
+    
+    printf("mask: min:%f max:%f \n",min(),max());
+    
+    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
+    img=tmp_img;
+    dim[0]=tmp_dim[0];
+    dim[1]=tmp_dim[1];
+    dim[2]=tmp_dim[2];
+    dim[3]=tmp_dim[3];
+    voxdim[0]=tmp_voxdim[0];
+    voxdim[1]=tmp_voxdim[1];
+    voxdim[2]=tmp_voxdim[2];
+    voxdim[3]=tmp_voxdim[3];
+    g_selectedVolume=tmp_g_selectedVolume;
+    
+    printf("volume: min:%f max:%f \n",min(),max());
+    
+    int		i,j,k;
+	float	mi,ma;
+	float	*hist;
+	
+	hist=(float*)calloc(nbins,sizeof(float));
+	
+	mi=min();
+	ma=max();
+	printf("nbins %d\n",nbins);
+	for(i=0;i<dim[0];i++)
+		for(j=0;j<dim[1];j++)
+			for(k=0;k<dim[2];k++){
+                int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
+                if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
+                    float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
+                    hist[(int)index]++;
+                    //printf("%f ",index);
+                }
+            }
+    float delta = (ma-mi)/nbins;
+    printf("delta %f\n ",delta);
+    printf("x: ");
+    for(i=0;i<nbins;i++)
+	{
+        printf("%f ",mi+delta*i);
+    }
+    printf("\n");
+    printf(" y: ");
+	for(i=0;i<nbins;i++)
+	{
+		printf("%g",hist[i]);
+		if(i<nbins-1)
+			printf(" ");
+	}
+	printf("\n");
+	free(hist);
+    
+}
+
+
 
 /*
 -i str                          input volume
@@ -1784,8 +1872,24 @@ int main (int argc, const char * argv[])
 		if(strcmp(argv[i],"-hist")==0)				// hist(#bins)
 		{
 			int		nbins;
-			sscanf(argv[++i]," %i ",&nbins);
-			hist(nbins);
+            char    *strnbins;
+            char    *path;
+			//sscanf(argv[++i]," %i ",&nbins);
+            
+            char    *str= (char*)argv[i+1];
+            
+            strnbins = strtok(str,",");
+            sscanf(strnbins," %i ",&nbins);
+            //if(nbins != NULL){
+                
+            //}
+            path = strtok(NULL,",");
+            if(path != NULL){
+                hist2(nbins, path);
+            }else{
+                hist(nbins);
+            }
+			i+=1;
 		}
 		else
 		if(strcmp(argv[i],"-matchHist")==0)				// matchHistogram(another_mri)
