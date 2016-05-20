@@ -1709,6 +1709,26 @@ void hist2(int nbins, char *path)
     float           *tmp_voxdim;
     int             *tmp_g_selectedVolume;
     
+    
+    
+    char filepath_x[1000];
+    strcpy(filepath_x, path);
+    filepath_x[strlen(filepath_x)-16]=0;
+    char filepath_y[1000];
+    strcpy(filepath_y, filepath_x);
+    char filename_x[] = "hist_data_x.txt";
+    char filename_y[] = "hist_data_y.txt";
+    strcat(filepath_x, filename_x);
+    strcat(filepath_y, filename_y);
+
+    FILE *fx = fopen(filepath_x, "w");
+    FILE *fy = fopen(filepath_y, "w");
+    if (fx == NULL || fy == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+    
     tmp_hdr=hdr;        //save data from -i temporarely
     tmp_img=img;
     tmp_dim=dim;
@@ -1764,21 +1784,20 @@ void hist2(int nbins, char *path)
                 }
             }
     float delta = (ma-mi)/nbins;
-    printf("delta %f\n ",delta);
-    printf("x: ");
+    printf("delta %f\n",delta);
+    //printf("x: \n");
     for(i=0;i<nbins;i++)
 	{
-        printf("%f ",mi+delta*i);
+        fprintf(fx,"%f ",mi+delta*i);
     }
-    printf("\n");
-    printf(" y: ");
+    //printf("\n");
+    //printf(" y: \n");
 	for(i=0;i<nbins;i++)
 	{
-		printf("%g",hist[i]);
+		fprintf(fy,"%g",hist[i]);
 		if(i<nbins-1)
-			printf(" ");
+			fprintf(fy," ");
 	}
-	printf("\n");
 	free(hist);
     
 }
