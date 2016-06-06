@@ -682,6 +682,18 @@ float mean(void)
 		sum+=getValue(i,j,k);
 	return sum/(float)(dim[0]*dim[1]*dim[2]);
 }
+float kurtosis(void) //not done
+{
+	int		i,j,k;
+	float	sum=0;
+    
+	for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++)
+                sum+=getValue(i,j,k);
+	return sum/(float)(dim[0]*dim[1]*dim[2]);
+}
+
 float std(void)
 {
 	int		i,j,k;
@@ -1806,8 +1818,7 @@ int saveMaskedVolume(char *path, char *maskpath)
 	return 0;
 }
 
-
-void hist2(int nbins, char *path)
+void hist2(int nbins, float vmin, float vmax, char *path)
 {
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
@@ -1818,6 +1829,27 @@ void hist2(int nbins, char *path)
     int				*tmp_dim;
     float           *tmp_voxdim;
     int             *tmp_g_selectedVolume;
+    
+    
+    
+    char filepath_x[1000];
+    strcpy(filepath_x, path);
+    filepath_x[strlen(filepath_x)-8]=0;
+    char filepath_y[1000];
+    strcpy(filepath_y, filepath_x);
+    char name_x[] = "hist_data_x_nbins";
+    char name_y[] = "hist_data_y_nbins";
+    char extension[] = ".txt";
+    snprintf(filepath_x,sizeof(filepath_x),"%s%s%d%s",filepath_x,name_x,nbins,extension);
+    snprintf(filepath_y,sizeof(filepath_y),"%s%s%d%s",filepath_y,name_y,nbins,extension);
+
+    FILE *fx = fopen(filepath_x, "w");
+    FILE *fy = fopen(filepath_y, "w");
+    if (fx == NULL || fy == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
     
     tmp_hdr=hdr;        //save data from -i temporarely
     tmp_img=img;
@@ -1860,8 +1892,8 @@ void hist2(int nbins, char *path)
 	
 	hist=(float*)calloc(nbins,sizeof(float));
 	
-	mi=min();
-	ma=max();
+	mi=vmin;
+	ma=vmax;
 	printf("nbins %d\n",nbins);
 	for(i=0;i<dim[0];i++)
 		for(j=0;j<dim[1];j++)
@@ -1874,21 +1906,20 @@ void hist2(int nbins, char *path)
                 }
             }
     float delta = (ma-mi)/nbins;
-    printf("delta %f\n ",delta);
-    printf("x: ");
+    printf("delta %f\n",delta);
+    //printf("x: \n");
     for(i=0;i<nbins;i++)
 	{
-        printf("%f ",mi+delta*i);
+        fprintf(fx,"%f ",mi+delta*i);
     }
-    printf("\n");
-    printf(" y: ");
+    //printf("\n");
+    //printf(" y: \n");
 	for(i=0;i<nbins;i++)
 	{
-		printf("%g",hist[i]);
+		fprintf(fy,"%g",hist[i]);
 		if(i<nbins-1)
-			printf(" ");
+			fprintf(fy," ");
 	}
-	printf("\n");
 	free(hist);
     
 }
@@ -1996,6 +2027,10 @@ int main (int argc, const char * argv[])
 		{
 			int		nbins;
             char    *strnbins;
+            float   vmin;
+            char    *strvmin;
+            float   vmax;
+            char    *strvmax;
             char    *path;
 			//sscanf(argv[++i]," %i ",&nbins);
             
@@ -2003,12 +2038,15 @@ int main (int argc, const char * argv[])
             
             strnbins = strtok(str,",");
             sscanf(strnbins," %i ",&nbins);
-            //if(nbins != NULL){
+            
+            strvmin = strtok(NULL, ",");
+            if(strvmin != NULL){
+                sscanf(strvmin," %f ",&vmin);
+                strvmax = strtok(NULL, ",");
+                sscanf(strvmax," %f ",&vmax);
+                path = strtok(NULL,",");
                 
-            //}
-            path = strtok(NULL,",");
-            if(path != NULL){
-                hist2(nbins, path);
+                hist2(nbins, vmin, vmax, path);
             }else{
                 hist(nbins);
             }
