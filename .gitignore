@@ -20,3 +20,5 @@ Analyze.o
 Analyze.o
 
 *.o
+
+volume.xcodeproj/project.pbxproj
