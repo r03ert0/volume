@@ -16,3 +16,7 @@ Analyze.o
 *.xcbkptlist
 
 *.pbxproj
+
+Analyze.o
+
+*.o

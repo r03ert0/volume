@@ -18,6 +18,7 @@ char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets f
 #define kNiftiVolume	 3
 #define kNiftiGZVolume	 4
 #define kSchematicVolume 5
+#define kTextVolume      6
 typedef struct {
     float x,y,z;
 } float3D;
@@ -1303,7 +1304,7 @@ void sampleMesh(char *mesh,char *result)
 #pragma mark [ Format conversion ]
 int getformatindex(char *path)
 {
-    char    *formats[]={"hdr","img","mgz","nii","gz","schematic"};
+    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt"};
     int     i,n=6; // number of recognised formats
     int     found,index;
     char    *extension;
@@ -1360,6 +1361,13 @@ int getformatindex(char *path)
         if(verbose)
             printf("Format: Schematic volume\n");
     }
+    else
+        if(i==6)
+        {
+            index=kTextVolume;
+            if(verbose)
+                printf("Format: Text volume\n");
+        }
     else
 	{
 		printf("ERROR: unrecognized format \"%s\"\n",extension);
@@ -1690,12 +1698,114 @@ int saveVolume(char *path)
         case kSchematicVolume:
             saveVolume_Schematic(path);
             break;
+        case kTextVolume:
+            //saveVolume_Schematic(path);
+            printf("ERROR: Cannot save text volume without mask yet...");
+            break;
 		default:
 			printf("ERROR: Output volume format not recognised\n");
 			break;
 	}
 	return 0;
 }
+
+int saveMaskedVolume_Text(char *path, char *maskpath){
+    
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int				mask_dim[4];
+    float           mask_voxdim[4];
+    AnalyzeHeader	*tmp_hdr;
+    char			*tmp_img;
+    int				*tmp_dim;
+    float           *tmp_voxdim;
+    int             *tmp_g_selectedVolume;
+    
+    tmp_hdr=hdr;        //save data from -i temporarely
+    tmp_img=img;
+    tmp_dim=dim;
+    tmp_voxdim=voxdim;
+    tmp_g_selectedVolume=g_selectedVolume;
+    
+    g_selectedVolume=0;
+    
+    loadVolume(maskpath);       //load mask in the global variables
+    mask_hdr=hdr;           //copy global variables in local variables
+    mask_img=img;
+    mask_dim[0]=dim[0];
+    mask_dim[1]=dim[1];
+    mask_dim[2]=dim[2];
+    mask_dim[3]=dim[3];
+    mask_voxdim[0]=voxdim[0];
+    mask_voxdim[1]=voxdim[1];
+    mask_voxdim[2]=voxdim[2];
+    mask_voxdim[3]=voxdim[3];
+    
+    printf("mask: min:%f max:%f \n",min(),max());
+    
+    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
+    img=tmp_img;
+    dim[0]=tmp_dim[0];
+    dim[1]=tmp_dim[1];
+    dim[2]=tmp_dim[2];
+    dim[3]=tmp_dim[3];
+    voxdim[0]=tmp_voxdim[0];
+    voxdim[1]=tmp_voxdim[1];
+    voxdim[2]=tmp_voxdim[2];
+    voxdim[3]=tmp_voxdim[3];
+    g_selectedVolume=tmp_g_selectedVolume;
+    
+    FILE *f = fopen(path, "w");
+    
+    printf("volume: min:%f max:%f \n",min(),max());
+    
+    for(int i=0;i<dim[0];i++)
+		for(int j=0;j<dim[1];j++)
+			for(int k=0;k<dim[2];k++){
+                int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
+                if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
+                    fprintf(f, "%f ",getValue(i, j, k));
+                }
+        
+            }
+        
+    return 0;
+}
+
+int saveMaskedVolume(char *path, char *maskpath)
+{
+	int	format;
+	
+	format=getformatindex(path);
+    printf("[saveVolume] format index: %i\n",format);
+	
+	switch(format)
+	{
+		case kAnalyzeVolume:
+			printf("ERROR: Cannot save Analyze volume with mask yet...");
+			break;
+        case kMGZVolume:
+            printf("ERROR: Cannot save MGZ volume with mask yet...");
+            break;
+        case kNiftiVolume:
+            printf("ERROR: Cannot save Nifti volume with mask yet...");
+            break;
+        case kNiftiGZVolume:
+            printf("ERROR: Cannot save NiftiGZ volume with mask yet...");
+            break;
+        case kSchematicVolume:
+            printf("ERROR: Cannot save Schematic volume with mask yet...");
+            break;
+        case kTextVolume:
+            saveMaskedVolume_Text(path,maskpath);
+            break;
+		default:
+			printf("ERROR: Output volume format not recognised\n");
+			break;
+	}
+	return 0;
+}
+
 
 void hist2(int nbins, char *path)
 {
@@ -1831,7 +1941,20 @@ int main (int argc, const char * argv[])
 		else
 		if(strcmp(argv[i],"-o")==0)				// output volume
 		{
-			saveVolume((char*)argv[++i]);
+            char    *filepath;
+            char    *maskpath;
+			char    *str= (char*)argv[i+1];
+            filepath = strtok(str,",");
+            maskpath = strtok(NULL,",");
+            
+            if(maskpath==NULL){
+                saveVolume(filepath);
+            }else{
+                saveMaskedVolume(filepath,maskpath);
+            }
+            
+            //saveVolume((char*)argv[++i]);
+            i+=1;
 		}
 		else
 		if(strcmp(argv[i],"-largest6con")==0)	// largest 6 connected component
