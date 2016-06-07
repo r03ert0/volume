@@ -1,8 +1,6 @@
 
 build/
 
-Analyze.o
-
 *.o
 
 *.tif
@@ -18,3 +16,8 @@ Analyze.o
 *.pbxproj
 
 volume
+
+volume.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+
+volume.xcodeproj/project.xcworkspace/xcshareddata/volume.xccheckout
+
