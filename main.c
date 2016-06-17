@@ -807,17 +807,9 @@ void drawSlice(char *path, char *cmap, char *ori, float slice)
     switch(ori[0])
     {
         case 'x':
-            if (slice==-1){
-                x = dim[0]/2;
-            }else{
-                if(slicenb==1){
-                    x=(int)slice;
-                } else{
-                    if(slicenb==0){
-                        x=dim[0]*(slice-floorf(slice));
-                    }
-                }
-            }
+            if (slice==-1) x=dim[0]/2;
+            else           x=(slicenb)?slice:(dim[0]*(slice-floorf(slice)));
+
             m=(float*)calloc(dim[1]*dim[2],sizeof(float));
             min=max=getValue(x,0,0);
             for(y=0;y<dim[1];y++)
@@ -833,17 +825,9 @@ void drawSlice(char *path, char *cmap, char *ori, float slice)
             tiff(path,m,dim[1],dim[2],cmap);
             break;
         case 'y':
-            if (slice==-1){
-                y = dim[1]/2;
-            }else{
-                if(slicenb==1){
-                    y=(int)slice;
-                } else{
-                    if(slicenb==0){
-                        y=dim[0]*(slice-floorf(slice));
-                    }
-                }
-            }
+            if (slice==-1) y=dim[1]/2;
+            else           y=(slicenb)?slice:(dim[1]*(slice-floorf(slice)));
+
             m=(float*)calloc(dim[0]*dim[2],sizeof(float));
             min=max=getValue(0,y,0);
             for(x=0;x<dim[0];x++)
@@ -859,17 +843,9 @@ void drawSlice(char *path, char *cmap, char *ori, float slice)
             tiff(path,m,dim[0],dim[2],cmap);
             break;
         case 'z':
-            if (slice==-1){
-                z = dim[2]/2;
-            }else{
-                if(slicenb==1){
-                    z=(int)slice;
-                } else{
-                    if(slicenb==0){
-                        z=dim[0]*(slice-floorf(slice));
-                    }
-                }
-            }
+            if (slice==-1) z=dim[2]/2;
+            else           z=(slicenb)?slice:(dim[2]*(slice-floorf(slice)));
+
             m=(float*)calloc(dim[0]*dim[1],sizeof(float));
             min=max=getValue(0,0,z);
             for(x=0;x<dim[0];x++)
@@ -1436,6 +1412,7 @@ int loadVolume_Nifti(char *path)
     dim[0]=hdr->dim[1];
     dim[1]=hdr->dim[2];
     dim[2]=hdr->dim[3];
+    dim[3]=hdr->dim[4]=1; // one single volume is selected
     return 0;
 }
 int saveVolume_Nifti(char *path)
@@ -1514,7 +1491,7 @@ int saveVolume_Schematic(char *path)
     unsigned char mine_blk[]={0x07,0x00,0x06,0x42,0x6C,0x6F,0x63,0x6B,0x73,                               //        10. 'Blocks' (byte array)
                               0x00,0x00,0x00,0x08};                                                       //            length: 8 (=2*2*2), followed by data
     unsigned char mine_2[]=  {0x00};                                                                      //    tag End
-    int h=hdr->dim[1],l=hdr->dim[2],w=hdr->dim[3];
+    int h=hdr->dim[3],l=hdr->dim[2],w=hdr->dim[1];
     int i,x,y,z;
     unsigned char *sch;
 
@@ -1593,9 +1570,9 @@ int saveVolume_Schematic(char *path)
     length+=i;
 
     // blocks (data, from blocks array)
-    for(x=0;x<hdr->dim[1];x++)
-    for(y=0;y<hdr->dim[2];y++)
-    for(z=0;z<hdr->dim[3];z++)
+    for(x=0;x<h;x++)
+    for(y=0;y<l;y++)
+    for(z=0;z<w;z++)
     {
         if(getValue(x,y,z)>0)
             sch[length+i]=0x03;
