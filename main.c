@@ -18,6 +18,7 @@ char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets f
 #define kNiftiVolume	 3
 #define kNiftiGZVolume	 4
 #define kSchematicVolume 5
+#define kTextVolume      6
 typedef struct {
     float x,y,z;
 } float3D;
@@ -312,6 +313,7 @@ void erode(int r)
 		setValue(0,i,j,k);
 	free(tmp);
 }
+
 float max(void)
 {
 	int		i,j,k;
@@ -628,12 +630,24 @@ void hist(int nbins)
 	
 	mi=min();
 	ma=max();
-	
+	printf("nbins %d\n ",nbins);
 	for(i=0;i<dim[0];i++)
 		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++)
-				hist[(int)((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi))]++;
-	
+			for(k=0;k<dim[2];k++){
+                float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
+				hist[(int)index]++;
+                //printf("%f ",index);
+            }
+    float delta = (ma-mi)/nbins;
+    printf("delta %f\n ",delta);
+    printf("min %f max %f \n",mi,ma);
+    printf("x: ");
+    for(i=0;i<nbins;i++)
+	{
+        printf("%f ",mi+delta*i);
+    }
+    printf("\n");
+    printf("y: ");
 	for(i=0;i<nbins;i++)
 	{
 		printf("%g",hist[i]);
@@ -668,6 +682,18 @@ float mean(void)
 		sum+=getValue(i,j,k);
 	return sum/(float)(dim[0]*dim[1]*dim[2]);
 }
+float kurtosis(void) //not done
+{
+	int		i,j,k;
+	float	sum=0;
+    
+	for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++)
+                sum+=getValue(i,j,k);
+	return sum/(float)(dim[0]*dim[1]*dim[2]);
+}
+
 float std(void)
 {
 	int		i,j,k;
@@ -1266,7 +1292,7 @@ void sampleMesh(char *mesh,char *result)
 #pragma mark [ Format conversion ]
 int getformatindex(char *path)
 {
-    char    *formats[]={"hdr","img","mgz","nii","gz","schematic"};
+    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt"};
     int     i,n=6; // number of recognised formats
     int     found,index;
     char    *extension;
@@ -1323,6 +1349,13 @@ int getformatindex(char *path)
         if(verbose)
             printf("Format: Schematic volume\n");
     }
+    else
+        if(i==6)
+        {
+            index=kTextVolume;
+            if(verbose)
+                printf("Format: Text volume\n");
+        }
     else
 	{
 		printf("ERROR: unrecognized format \"%s\"\n",extension);
@@ -1654,12 +1687,347 @@ int saveVolume(char *path)
         case kSchematicVolume:
             saveVolume_Schematic(path);
             break;
+        case kTextVolume:
+            //saveVolume_Schematic(path);
+            printf("ERROR: Cannot save text volume without mask yet...");
+            break;
 		default:
 			printf("ERROR: Output volume format not recognised\n");
 			break;
 	}
 	return 0;
 }
+
+int saveMaskedVolume_Text(char *path, char *maskpath){
+    
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int				mask_dim[4];
+    float           mask_voxdim[4];
+    AnalyzeHeader	*tmp_hdr;
+    char			*tmp_img;
+    int				*tmp_dim;
+    float           *tmp_voxdim;
+    int             *tmp_g_selectedVolume;
+    
+    tmp_hdr=hdr;        //save data from -i temporarely
+    tmp_img=img;
+    tmp_dim=dim;
+    tmp_voxdim=voxdim;
+    tmp_g_selectedVolume=g_selectedVolume;
+    
+    g_selectedVolume=0;
+    
+    loadVolume(maskpath);       //load mask in the global variables
+    mask_hdr=hdr;           //copy global variables in local variables
+    mask_img=img;
+    mask_dim[0]=dim[0];
+    mask_dim[1]=dim[1];
+    mask_dim[2]=dim[2];
+    mask_dim[3]=dim[3];
+    mask_voxdim[0]=voxdim[0];
+    mask_voxdim[1]=voxdim[1];
+    mask_voxdim[2]=voxdim[2];
+    mask_voxdim[3]=voxdim[3];
+    
+    printf("mask: min:%f max:%f \n",min(),max());
+    
+    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
+    img=tmp_img;
+    dim[0]=tmp_dim[0];
+    dim[1]=tmp_dim[1];
+    dim[2]=tmp_dim[2];
+    dim[3]=tmp_dim[3];
+    voxdim[0]=tmp_voxdim[0];
+    voxdim[1]=tmp_voxdim[1];
+    voxdim[2]=tmp_voxdim[2];
+    voxdim[3]=tmp_voxdim[3];
+    g_selectedVolume=tmp_g_selectedVolume;
+    
+    FILE *f = fopen(path, "w");
+    
+    printf("volume: min:%f max:%f \n",min(),max());
+    
+    for(int i=0;i<dim[0];i++)
+		for(int j=0;j<dim[1];j++)
+			for(int k=0;k<dim[2];k++){
+                int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
+                if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
+                    fprintf(f, "%f ",getValue(i, j, k));
+                }
+        
+            }
+        
+    return 0;
+}
+
+int saveMaskedVolume(char *path, char *maskpath)
+{
+	int	format;
+	
+	format=getformatindex(path);
+    printf("[saveVolume] format index: %i\n",format);
+	
+	switch(format)
+	{
+		case kAnalyzeVolume:
+			printf("ERROR: Cannot save Analyze volume with mask yet...");
+			break;
+        case kMGZVolume:
+            printf("ERROR: Cannot save MGZ volume with mask yet...");
+            break;
+        case kNiftiVolume:
+            printf("ERROR: Cannot save Nifti volume with mask yet...");
+            break;
+        case kNiftiGZVolume:
+            printf("ERROR: Cannot save NiftiGZ volume with mask yet...");
+            break;
+        case kSchematicVolume:
+            printf("ERROR: Cannot save Schematic volume with mask yet...");
+            break;
+        case kTextVolume:
+            saveMaskedVolume_Text(path,maskpath);
+            break;
+		default:
+			printf("ERROR: Output volume format not recognised\n");
+			break;
+	}
+	return 0;
+}
+
+void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
+{
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int				mask_dim[4];
+    float           mask_voxdim[4];
+    AnalyzeHeader	*tmp_hdr;
+    char			*tmp_img;
+    int				*tmp_dim;
+    float           *tmp_voxdim;
+    int             *tmp_g_selectedVolume;
+    
+    
+    
+    char filepath_x[1000];
+    strcpy(filepath_x, path);
+    filepath_x[strlen(filepath_x)-15]=0;
+    char filepath_y[1000];
+    strcpy(filepath_y, filepath_x);
+    char name_x[] = "_x_nbins";
+    char name_y[] = "_y_nbins";
+    char extension[] = ".txt";
+    snprintf(filepath_x,sizeof(filepath_x),"%s%s%s%d%s",filepath_x,fileName,name_x,nbins,extension);
+    snprintf(filepath_y,sizeof(filepath_y),"%s%s%s%d%s",filepath_y,fileName,name_y,nbins,extension);
+
+    FILE *fx = fopen(filepath_x, "w");
+    FILE *fy = fopen(filepath_y, "w");
+    if (fx == NULL || fy == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+    
+    tmp_hdr=hdr;        //save data from -i temporarely
+    tmp_img=img;
+    tmp_dim=dim;
+    tmp_voxdim=voxdim;
+    tmp_g_selectedVolume=g_selectedVolume;
+    
+    g_selectedVolume=0;
+    loadVolume(path);       //load mask in the global variables
+    mask_hdr=hdr;           //copy global variables in local variables
+    mask_img=img;
+    mask_dim[0]=dim[0];
+    mask_dim[1]=dim[1];
+    mask_dim[2]=dim[2];
+    mask_dim[3]=dim[3];
+    mask_voxdim[0]=voxdim[0];
+    mask_voxdim[1]=voxdim[1];
+    mask_voxdim[2]=voxdim[2];
+    mask_voxdim[3]=voxdim[3];
+    
+    printf("mask: min:%f max:%f \n",min(),max());
+    
+    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
+    img=tmp_img;
+    dim[0]=tmp_dim[0];
+    dim[1]=tmp_dim[1];
+    dim[2]=tmp_dim[2];
+    dim[3]=tmp_dim[3];
+    voxdim[0]=tmp_voxdim[0];
+    voxdim[1]=tmp_voxdim[1];
+    voxdim[2]=tmp_voxdim[2];
+    voxdim[3]=tmp_voxdim[3];
+    g_selectedVolume=tmp_g_selectedVolume;
+    
+    printf("volume: min:%f max:%f \n",min(),max());
+    
+    int		i,j,k;
+	float	mi,ma;
+	float	*hist;
+	
+	hist=(float*)calloc(nbins,sizeof(float));
+	
+	mi=vmin;
+	ma=vmax;
+	printf("nbins %d\n",nbins);
+	for(i=0;i<dim[0];i++)
+		for(j=0;j<dim[1];j++)
+			for(k=0;k<dim[2];k++){
+                int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
+                if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
+                    float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
+                    hist[(int)index]++;
+                    //printf("%f ",index);
+                }
+            }
+    float delta = (ma-mi)/nbins;
+    printf("delta %f\n",delta);
+    //printf("x: \n");
+    for(i=0;i<nbins;i++)
+	{
+        fprintf(fx,"%f ",mi+delta*i+delta/2);
+    }
+    //printf("\n");
+    //printf(" y: \n");
+	for(i=0;i<nbins;i++)
+	{
+		fprintf(fy,"%g",hist[i]);
+		if(i<nbins-1)
+			fprintf(fy," ");
+	}
+	free(hist);
+    
+}
+
+void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *path2)
+{
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int				mask_dim[4];
+    float           mask_voxdim[4];
+    AnalyzeHeader	*mask_hdr2;
+    char			*mask_img2;
+    int				mask_dim2[4];
+    float           mask_voxdim2[4];
+    AnalyzeHeader	*tmp_hdr;
+    char			*tmp_img;
+    int				*tmp_dim;
+    float           *tmp_voxdim;
+    int             *tmp_g_selectedVolume;
+    
+    
+    
+    char filepath_x[1000];
+    strcpy(filepath_x, path);
+    filepath_x[strlen(filepath_x)-15]=0;
+    char filepath_y[1000];
+    strcpy(filepath_y, filepath_x);
+    char name_x[] = "_x_nbins";
+    char name_y[] = "_y_nbins";
+    char extension[] = ".txt";
+    snprintf(filepath_x,sizeof(filepath_x),"%s%s%s%d%s",filepath_x,fileName,name_x,nbins,extension);
+    snprintf(filepath_y,sizeof(filepath_y),"%s%s%s%d%s",filepath_y,fileName,name_y,nbins,extension);
+    
+    FILE *fx = fopen(filepath_x, "w");
+    FILE *fy = fopen(filepath_y, "w");
+    if (fx == NULL || fy == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+    
+    tmp_hdr=hdr;        //save data from -i temporarely
+    tmp_img=img;
+    tmp_dim=dim;
+    tmp_voxdim=voxdim;
+    tmp_g_selectedVolume=g_selectedVolume;
+    
+    g_selectedVolume=0;
+    loadVolume(path);       //load mask in the global variables
+    mask_hdr=hdr;           //copy global variables in local variables
+    mask_img=img;
+    mask_dim[0]=dim[0];
+    mask_dim[1]=dim[1];
+    mask_dim[2]=dim[2];
+    mask_dim[3]=dim[3];
+    mask_voxdim[0]=voxdim[0];
+    mask_voxdim[1]=voxdim[1];
+    mask_voxdim[2]=voxdim[2];
+    mask_voxdim[3]=voxdim[3];
+    
+    printf("mask: min:%f max:%f \n",min(),max());
+    
+    g_selectedVolume=0;
+    loadVolume(path2);       //load mask2 in the global variables
+    mask_hdr2=hdr;           //copy global variables in local variables
+    mask_img2=img;
+    mask_dim2[0]=dim[0];
+    mask_dim2[1]=dim[1];
+    mask_dim2[2]=dim[2];
+    mask_dim2[3]=dim[3];
+    mask_voxdim2[0]=voxdim[0];
+    mask_voxdim2[1]=voxdim[1];
+    mask_voxdim2[2]=voxdim[2];
+    mask_voxdim2[3]=voxdim[3];
+    
+    printf("mask2: min:%f max:%f \n",min(),max());
+    
+    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
+    img=tmp_img;
+    dim[0]=tmp_dim[0];
+    dim[1]=tmp_dim[1];
+    dim[2]=tmp_dim[2];
+    dim[3]=tmp_dim[3];
+    voxdim[0]=tmp_voxdim[0];
+    voxdim[1]=tmp_voxdim[1];
+    voxdim[2]=tmp_voxdim[2];
+    voxdim[3]=tmp_voxdim[3];
+    g_selectedVolume=tmp_g_selectedVolume;
+    
+    printf("volume: min:%f max:%f \n",min(),max());
+    
+    int		i,j,k;
+	float	mi,ma;
+	float	*hist;
+	
+	hist=(float*)calloc(nbins,sizeof(float));
+	
+	mi=vmin;
+	ma=vmax;
+	printf("nbins %d\n",nbins);
+	for(i=0;i<dim[0];i++)
+		for(j=0;j<dim[1];j++)
+			for(k=0;k<dim[2];k++){
+                int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
+                int mask_i2 = k*mask_dim2[1]*mask_dim2[0]+j*mask_dim2[0]+i;
+                if ((getValue2(mask_i,mask_hdr, mask_img)==0 && getValue2(mask_i2,mask_hdr2, mask_img2)!=0)
+                    || (getValue2(mask_i,mask_hdr, mask_img)!=0 && getValue2(mask_i2,mask_hdr2, mask_img2)==0)){               //masking
+                    float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
+                    hist[(int)index]++;
+                    //printf("%f ",index);
+                }
+            }
+    float delta = (ma-mi)/nbins;
+    printf("delta %f\n",delta);
+    //printf("x: \n");
+    for(i=0;i<nbins;i++)
+	{
+        fprintf(fx,"%f ",mi+delta*i+delta/2);
+    }
+    //printf("\n");
+    //printf(" y: \n");
+	for(i=0;i<nbins;i++)
+	{
+		fprintf(fy,"%g",hist[i]);
+		if(i<nbins-1)
+			fprintf(fy," ");
+	}
+	free(hist);
+    
+}
+
 
 
 /*
@@ -1708,7 +2076,20 @@ int main (int argc, const char * argv[])
 		else
 		if(strcmp(argv[i],"-o")==0)				// output volume
 		{
-			saveVolume((char*)argv[++i]);
+            char    *filepath;
+            char    *maskpath;
+			char    *str= (char*)argv[i+1];
+            filepath = strtok(str,",");
+            maskpath = strtok(NULL,",");
+            
+            if(maskpath==NULL){
+                saveVolume(filepath);
+            }else{
+                saveMaskedVolume(filepath,maskpath);
+            }
+            
+            //saveVolume((char*)argv[++i]);
+            i+=1;
 		}
 		else
 		if(strcmp(argv[i],"-largest6con")==0)	// largest 6 connected component
@@ -1749,8 +2130,39 @@ int main (int argc, const char * argv[])
 		if(strcmp(argv[i],"-hist")==0)				// hist(#bins)
 		{
 			int		nbins;
-			sscanf(argv[++i]," %i ",&nbins);
-			hist(nbins);
+            char    *strnbins;
+            float   vmin;
+            char    *strvmin;
+            float   vmax;
+            char    *strvmax;
+            char    *fileName;
+            char    *path;
+            char    *path2;
+			//sscanf(argv[++i]," %i ",&nbins);
+            
+            char    *str= (char*)argv[i+1];
+            
+            strnbins = strtok(str,",");
+            sscanf(strnbins," %i ",&nbins);
+            
+            strvmin = strtok(NULL, ",");
+            if(strvmin != NULL){
+                sscanf(strvmin," %f ",&vmin);
+                strvmax = strtok(NULL, ",");
+                sscanf(strvmax," %f ",&vmax);
+                fileName = strtok(NULL,",");
+                path = strtok(NULL,",");
+                
+                path2 = strtok(NULL,",");
+                if(path2 != NULL){
+                    hist3(nbins, vmin, vmax, fileName, path, path2);
+                }else{
+                    hist2(nbins, vmin, vmax, fileName, path);
+                }
+            }else{
+                hist(nbins);
+            }
+			i+=1;
 		}
 		else
 		if(strcmp(argv[i],"-matchHist")==0)				// matchHistogram(another_mri)

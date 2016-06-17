@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		62555BB5119C45F7001A2EEF /* Analyze.c in Sources */ = {isa = PBXBuildFile; fileRef = 62555BB3119C45F7001A2EEF /* Analyze.c */; };
 		62B0B1AA165AC7AF00CD5F28 /* MGH.c in Sources */ = {isa = PBXBuildFile; fileRef = 62B0B1A8165AC7AF00CD5F28 /* MGH.c */; };
-		62B0B1AE165AC7C100CD5F28 /* Nifti.c in Sources */ = {isa = PBXBuildFile; fileRef = 62B0B1AB165AC7C100CD5F28 /* Nifti.c */; };
 		8DD76FAC0486AB0100D96B5E /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* main.c */; settings = {ATTRIBUTES = (); }; };
 		8DD76FB00486AB0100D96B5E /* volume.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6A0FF2C0290799A04C91782 /* volume.1 */; };
+		F37BE9671CD245F70077E19B /* Analyze.c in Sources */ = {isa = PBXBuildFile; fileRef = F37BE9621CD245F70077E19B /* Analyze.c */; };
+		F37BE9681CD245F70077E19B /* Nifti.c in Sources */ = {isa = PBXBuildFile; fileRef = F37BE9641CD245F70077E19B /* Nifti.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,15 +29,15 @@
 
 /* Begin PBXFileReference section */
 		08FB7796FE84155DC02AAC07 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		62555BB3119C45F7001A2EEF /* Analyze.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Analyze.c; path = ../RAMONES/Analyze.c; sourceTree = SOURCE_ROOT; };
-		62555BB4119C45F7001A2EEF /* Analyze.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Analyze.h; path = ../RAMONES/Analyze.h; sourceTree = SOURCE_ROOT; };
 		62B0B1A8165AC7AF00CD5F28 /* MGH.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MGH.c; sourceTree = "<group>"; };
 		62B0B1A9165AC7AF00CD5F28 /* MGH.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGH.h; sourceTree = "<group>"; };
-		62B0B1AB165AC7C100CD5F28 /* Nifti.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Nifti.c; path = ../RAMONES/Nifti.c; sourceTree = SOURCE_ROOT; };
-		62B0B1AC165AC7C100CD5F28 /* Nifti.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Nifti.h; path = ../RAMONES/Nifti.h; sourceTree = SOURCE_ROOT; };
-		62B0B1AD165AC7C100CD5F28 /* nifti1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nifti1.h; path = ../RAMONES/nifti1.h; sourceTree = SOURCE_ROOT; };
 		8DD76FB20486AB0100D96B5E /* volume */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = volume; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6A0FF2C0290799A04C91782 /* volume.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = volume.1; sourceTree = "<group>"; };
+		F37BE9621CD245F70077E19B /* Analyze.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Analyze.c; sourceTree = "<group>"; };
+		F37BE9631CD245F70077E19B /* Analyze.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Analyze.h; sourceTree = "<group>"; };
+		F37BE9641CD245F70077E19B /* Nifti.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Nifti.c; sourceTree = "<group>"; };
+		F37BE9651CD245F70077E19B /* Nifti.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Nifti.h; sourceTree = "<group>"; };
+		F37BE9661CD245F70077E19B /* nifti1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nifti1.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,13 +64,13 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				62555BB4119C45F7001A2EEF /* Analyze.h */,
-				62555BB3119C45F7001A2EEF /* Analyze.c */,
 				62B0B1A9165AC7AF00CD5F28 /* MGH.h */,
 				62B0B1A8165AC7AF00CD5F28 /* MGH.c */,
-				62B0B1AD165AC7C100CD5F28 /* nifti1.h */,
-				62B0B1AC165AC7C100CD5F28 /* Nifti.h */,
-				62B0B1AB165AC7C100CD5F28 /* Nifti.c */,
+				F37BE9621CD245F70077E19B /* Analyze.c */,
+				F37BE9631CD245F70077E19B /* Analyze.h */,
+				F37BE9641CD245F70077E19B /* Nifti.c */,
+				F37BE9651CD245F70077E19B /* Nifti.h */,
+				F37BE9661CD245F70077E19B /* nifti1.h */,
 				08FB7796FE84155DC02AAC07 /* main.c */,
 			);
 			name = Source;
@@ -142,10 +142,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F37BE9671CD245F70077E19B /* Analyze.c in Sources */,
 				8DD76FAC0486AB0100D96B5E /* main.c in Sources */,
-				62555BB5119C45F7001A2EEF /* Analyze.c in Sources */,
+				F37BE9681CD245F70077E19B /* Nifti.c in Sources */,
 				62B0B1AA165AC7AF00CD5F28 /* MGH.c in Sources */,
-				62B0B1AE165AC7C100CD5F28 /* Nifti.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
