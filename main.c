@@ -1049,6 +1049,165 @@ void matchHistogram(char *volpath)
 	for(i=0;i<n;i++)
 		setValue2(trans[(int)getValue2(i,hdr,img)],i,hdr,img);
 }
+char* c2s(char *c, int n)
+{
+    char *s=(char*)calloc(n+1,sizeof(char));
+    strncpy(s,c,n);
+    s[n]=(char)0;
+    return s;
+}
+void showNiiHeader(void)
+{
+    nifti_1_header *h=(nifti_1_header*)hdr;
+
+    printf("sizeof_hdr:	%i\n",                       h->sizeof_hdr);        /*!< MUST be 348           */  /* int sizeof_hdr;      */
+    printf("data_type[10]:	%s\n",                   c2s(h->data_type,10)); /*!< ++UNUSED++            */  /* char data_type[10];  */
+    printf("db_name[18]:	%s\n",                   c2s(h->db_name,18));   /*!< ++UNUSED++            */  /* char db_name[18];    */
+    printf("extents:	%i\n",                       h->extents);           /*!< ++UNUSED++            */  /* int extents;         */
+    printf("session_error:	%i\n",                   h->session_error);     /*!< ++UNUSED++            */  /* short session_error; */
+    printf("regular:	%c\n",                       h->regular);           /*!< ++UNUSED++            */  /* char regular;        */
+    printf("dim_info:	%c\n",                       h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
+
+                                                /*--- was image_dimension substruct ---*/
+    printf("dim[8]:	%i,%i,%i,%i,%i,%i,%i,%i\n",      h->dim[0],h->dim[1],h->dim[2],h->dim[3],h->dim[4],h->dim[5],h->dim[6],h->dim[7]);            /*!< Data array dimensions.*/  /* short dim[8];        */
+    printf("intent_p1:	%f\n",                       h->intent_p1 );        /*!< 1st intent parameter. */  /* short unused8;       */
+                                                                                                          /* short unused9;       */
+    printf("intent_p2:	%f\n",                       h->intent_p2 );        /*!< 2nd intent parameter. */  /* short unused10;      */
+                                                                                                          /* short unused11;      */
+    printf("intent_p3:	%f\n",                       h->intent_p3 );        /*!< 3rd intent parameter. */  /* short unused12;      */
+                                                                                                          /* short unused13;      */
+    printf("intent_code:	%i\n",                   h->intent_code );      /*!< NIFTI_INTENT_* code.  */  /* short unused14;      */
+    printf("datatype:	%i\n",                       h->datatype);          /*!< Defines data type!    */  /* short datatype;      */
+    printf("bitpix:	%i\n",                           h->bitpix);            /*!< Number bits/voxel.    */  /* short bitpix;        */
+    printf("slice_start:	%i\n",                   h->slice_start);       /*!< First slice index.    */  /* short dim_un0;       */
+    printf("pixdim[8]:	%f,%f,%f,%f,%f,%f,%f,%f\n",  h->pixdim[0],h->pixdim[1],h->pixdim[2],h->pixdim[3],h->pixdim[4],h->pixdim[5],h->pixdim[6],h->pixdim[7]);         /*!< Grid spacings.        */  /* float pixdim[8];     */
+    printf("vox_offset:	%f\n",                       h->vox_offset);        /*!< Offset into .nii file */  /* float vox_offset;    */
+    printf("scl_slope:	%f\n",                       h->scl_slope );        /*!< Data scaling:	slope.  */  /* float funused1;      */
+    printf("scl_inter:	%f\n",                       h->scl_inter );        /*!< Data scaling:	offset. */  /* float funused2;      */
+    printf("slice_end:	%i\n",                       h->slice_end);         /*!< Last slice index.     */  /* float funused3;      */
+    printf("slice_code:	%c\n",                       h->slice_code );       /*!< Slice timing order.   */
+    printf("xyzt_units:	%c\n",                       h->xyzt_units );       /*!< Units of pixdim[1..4] */
+    printf("cal_max:	%f\n",                       h->cal_max);           /*!< Max display intensity */  /* float cal_max;       */
+    printf("cal_min:	%f\n",                       h->cal_min);           /*!< Min display intensity */  /* float cal_min;       */
+    printf("slice_duration:	%f\n",                   h->slice_duration);    /*!< Time for 1 slice.     */  /* float compressed;    */
+    printf("toffset:	%f\n",                       h->toffset);           /*!< Time axis shift.      */  /* float verified;      */
+    printf("glmax:	%i\n",                           h->glmax);             /*!< ++UNUSED++            */  /* int glmax;           */
+    printf("glmin:	%i\n",                           h->glmin);             /*!< ++UNUSED++            */  /* int glmin;           */
+
+                                                /*--- was data_history substruct ---*/
+    printf("descrip[80]:	%s\n",                   c2s(h->descrip,80));   /*!< any text you like.    */  /* char descrip[80];    */
+    printf("aux_file[24]:	%s\n",                   c2s(h->aux_file,24));  /*!< auxiliary filename.   */  /* char aux_file[24];   */
+
+    printf("qform_code:	%i\n",                       h->qform_code );       /*!< NIFTI_XFORM_* code.   */  /*-- all ANALYZE 7.5 ---*/
+    printf("sform_code:	%i\n",                       h->sform_code );       /*!< NIFTI_XFORM_* code.   */  /*   fields below here  */
+                                                                                                          /*   are replaced       */
+    printf("quatern_b:	%f\n",                       h->quatern_b );        /*!< Quaternion b param.   */
+    printf("quatern_c:	%f\n",                       h->quatern_c );        /*!< Quaternion c param.   */
+    printf("quatern_d:	%f\n",                       h->quatern_d );        /*!< Quaternion d param.   */
+    printf("qoffset_x:	%f\n",                       h->qoffset_x );        /*!< Quaternion x shift.   */
+    printf("qoffset_y:	%f\n",                       h->qoffset_y );        /*!< Quaternion y shift.   */
+    printf("qoffset_z:	%f\n",                       h->qoffset_z );        /*!< Quaternion z shift.   */
+
+    printf("srow_x[4]:	%f,%f,%f,%f\n",              h->srow_x[0],h->srow_x[1],h->srow_x[2],h->srow_x[3] );        /*!< 1st row affine transform.   */
+    printf("srow_y[4]:	%f,%f,%f,%f\n",              h->srow_y[0],h->srow_y[1],h->srow_y[2],h->srow_y[3] );        /*!< 2nd row affine transform.   */
+    printf("srow_z[4]:	%f,%f,%f,%f\n",              h->srow_z[0],h->srow_z[1],h->srow_z[2],h->srow_z[3] );        /*!< 3rd row affine transform.   */
+
+    printf("intent_name[16]:	%s\n",               c2s(h->intent_name,16));   /*!< 'name' or meaning of data.  */
+
+    printf("magic[4]:	%s\n",                       c2s(h->magic,4) );         /*!< MUST be "ni1\0" or "n+1\0". */
+}
+
+void setNiiHeader(char *var, char *val)
+{
+    nifti_1_header *h=(nifti_1_header*)hdr;
+
+    if(strcmp(var,"sizeof_hdr")==0)
+        h->sizeof_hdr=(int)atoi(val);
+    else if(strcmp(var,"data_type")==0)
+        strcpy(h->data_type,val);
+    else if(strcmp(var,"db_name")==0)
+        strcpy(h->db_name,val);
+    else if(strcmp(var,"extents")==0)
+        h->extents=atoi(val);
+    else if(strcmp(var,"session_error")==0)
+        h->session_error=(short)atoi(val);
+    else if(strcmp(var,"regular")==0)
+        h->regular=val[0];
+    else if(strcmp(var,"dim_info")==0)
+        h->dim_info=val[0];
+    else if(strcmp(var,"dim")==0)
+        sscanf(val," %hi , %hi , %hi , %hi , %hi , %hi , %hi , %hi ",&(h->dim[0]),&(h->dim[1]),&(h->dim[2]),&(h->dim[3]),&(h->dim[4]),&(h->dim[5]),&(h->dim[6]),&(h->dim[7]));
+    else if(strcmp(var,"intent_p1")==0)
+        h->intent_p1=(short)atoi(val);
+    else if(strcmp(var,"intent_p2")==0)
+        h->intent_p2=(short)atoi(val);
+    else if(strcmp(var,"intent_p3")==0)
+        h->intent_p3=(short)atoi(val);
+    else if(strcmp(var,"intent_code")==0)
+        h->intent_code=(short)atoi(val);
+    else if(strcmp(var,"datatype")==0)
+        h->datatype=(short)atoi(val);
+    else if(strcmp(var,"bitpix")==0)
+        h->bitpix=(short)atoi(val);
+    else if(strcmp(var,"slice_start")==0)
+        h->slice_start=(short)atoi(val);
+    else if(strcmp(var,"pixdim")==0)
+        sscanf(val," %f , %f , %f , %f , %f , %f , %f , %f ",  &(h->pixdim[0]),&(h->pixdim[1]),&(h->pixdim[2]),&(h->pixdim[3]),&(h->pixdim[4]),&(h->pixdim[5]),&(h->pixdim[6]),&(h->pixdim[7]));
+    else if(strcmp(var,"vox_offset")==0)
+        h->vox_offset=(float)atof(val);
+    else if(strcmp(var,"scl_slope")==0)
+        h->scl_slope=(float)atof(val);
+    else if(strcmp(var,"scl_inter")==0)
+        h->scl_inter=(float)atof(val);
+    else if(strcmp(var,"slice_end")==0)
+        h->slice_end=(float)atof(val);
+    else if(strcmp(var,"slice_code")==0)
+        h->slice_code=val[0];
+    else if(strcmp(var,"xyzt_units")==0)
+        h->xyzt_units=val[0];
+    else if(strcmp(var,"cal_max")==0)
+        h->cal_max=(float)atof(val);
+    else if(strcmp(var,"cal_min")==0)
+        h->cal_min=(float)atof(val);
+    else if(strcmp(var,"slice_duration")==0)
+        h->slice_duration=(float)atof(val);
+    else if(strcmp(var,"toffset")==0)
+        h->toffset=(float)atof(val);
+    else if(strcmp(var,"glmax")==0)
+        h->glmax=(int)atoi(val);
+    else if(strcmp(var,"glmin")==0)
+        h->glmin=(int)atoi(val);
+    else if(strcmp(var,"descrip")==0)
+        strcpy(h->descrip,val);
+    else if(strcmp(var,"aux_file[24]")==0)
+        strcpy(h->aux_file,val);
+    else if(strcmp(var,"qform_code")==0)
+        h->qform_code=(short)atoi(val);
+    else if(strcmp(var,"sform_code")==0)
+        h->sform_code=(short)atoi(val);
+    else if(strcmp(var,"quatern_b")==0)
+        h->quatern_b=(float)atof(val);
+    else if(strcmp(var,"quatern_c")==0)
+        h->quatern_c=(float)atof(val);
+    else if(strcmp(var,"quatern_d")==0)
+        h->quatern_d=(float)atof(val);
+    else if(strcmp(var,"qoffset_x")==0)
+        h->qoffset_x=(float)atof(val);
+    else if(strcmp(var,"qoffset_y")==0)
+        h->qoffset_y=(float)atof(val);
+    else if(strcmp(var,"qoffset_z")==0)
+        h->qoffset_z=(float)atof(val);
+    else if(strcmp(var,"srow_x")==0)
+        sscanf(val," %f , %f , %f , %f ", &(h->srow_x[0]),&(h->srow_x[1]),&(h->srow_x[2]),&(h->srow_x[3]) );
+    else if(strcmp(var,"srow_y")==0)
+        sscanf(val," %f , %f , %f , %f ", &(h->srow_y[0]),&(h->srow_y[1]),&(h->srow_y[2]),&(h->srow_y[3]) );
+    else if(strcmp(var,"srow_z")==0)
+        sscanf(val," %f , %f , %f , %f ", &(h->srow_z[0]),&(h->srow_z[1]),&(h->srow_z[2]),&(h->srow_z[3]) );
+    else if(strcmp(var,"intent_name")==0)
+        strcpy(h->intent_name,val);
+    else if(strcmp(var,"magic")==0)
+        strcpy(h->magic,val);
+}
 void zigzag(void)
 {
     int m,n=0;
@@ -1113,7 +1272,7 @@ void strokeMesh(char *path)
         z/=hdr->pixdim[3];
         if(x<0||x>=dim[0]||y<0||y>=dim[1]||z<0||z>=dim[2])
         {
-            printf("ERROR: mesh out of volume bounds\n");
+            printf("ERROR: mesh out of volume bounds. Vertex %i=(%f, %f, %f)\n",i,x,y,z);
             break;
         }
         setValue(mx+1,(int)(x+0.5),(int)(y+0.5),(int)(z+0.5));
@@ -2273,6 +2432,18 @@ int main (int argc, const char * argv[])
             char    *mesh_path=(char*)argv[++i];
             char    *result_path=(char*)argv[++i];
             sampleMesh(mesh_path,result_path);
+        }
+        else
+        if(strcmp(argv[i],"-showNiiHdr")==0)		// show complete nifti 1 header
+        {
+            showNiiHeader();
+        }
+        else
+        if(strcmp(argv[i],"-setNiiHdr")==0)		// show complete nifti 1 header
+        {
+            char    *var=(char*)argv[++i];
+            char    *val=(char*)argv[++i];
+            setNiiHeader(var,val);
         }
         else
         {
