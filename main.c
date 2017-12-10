@@ -1,6 +1,7 @@
 //char	version[]="volume, v2, roberto toro, 10 December 2010";	// added -decompose
 //char	version[]="volume, v3, roberto toro, 9 August 2015";	// added support to nii and nii.gz
 char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets for isosurface extraction
+char	version[]="volume, v5, roberto toro, 10 Decembre 2017";	// added resize
 
 #include <stdio.h>
 #include "Analyze.h"
@@ -86,51 +87,73 @@ float getValue1(int index)
 }
 float getValue2(int i, AnalyzeHeader *theHdr, char *theImg)
 {
-	float		val;
-	RGBValue	rgb;
-	
-	if(theHdr->datatype==RGB)
-	{
-		rgb=((RGBValue*)theImg)[i];
-		val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
-	}
-	else
-	{
-		switch(theHdr->datatype)
-		{	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-			case SHORT: val=        ((short*)theImg)[i];	break;
-			case INT:	val=          ((int*)theImg)[i];	break;
-			case FLOAT:	val=        ((float*)theImg)[i];	break;
-		}
-	}
-	return val;
+    float		val;
+    RGBValue	rgb;
+
+    if(theHdr->datatype==RGB)
+    {
+        rgb=((RGBValue*)theImg)[i];
+        val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+    }
+    else
+    {
+        switch(theHdr->datatype)
+        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
+            case SHORT: val=        ((short*)theImg)[i];	break;
+            case INT:	val=          ((int*)theImg)[i];	break;
+            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        }
+    }
+    return val;
+}
+float getValue3(int x, int y, int z, AnalyzeHeader *theHdr, char *theImg)
+{
+    float		val;
+    RGBValue	rgb;
+    int         i=z*dim[1]*dim[0]+y*dim[0]+x;
+
+    if(theHdr->datatype==RGB)
+    {
+        rgb=((RGBValue*)theImg)[i];
+        val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+    }
+    else
+    {
+        switch(theHdr->datatype)
+        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
+            case SHORT: val=        ((short*)theImg)[i];	break;
+            case INT:	val=          ((int*)theImg)[i];	break;
+            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        }
+    }
+    return val;
 }
 void setValue(float val, int x, int y, int z)
 {
-	switch(hdr->datatype)
-	{	case UCHAR: ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;			break;
-		case SHORT: ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-		case INT:	((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-		case FLOAT:	((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-	}
+    switch(hdr->datatype)
+    {	case UCHAR: ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;			break;
+        case SHORT: ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
+        case INT:	((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
+        case FLOAT:	((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
+    }
 }
 void setValue1(float val, int i)
 {
-	switch(hdr->datatype)
-	{	case UCHAR: ((unsigned char*)img)[i]=val;	break;
-		case SHORT: ((short*)img)[i]=val;			break;
-		case INT:	((int*)img)[i]=val;				break;
-		case FLOAT:	((float*)img)[i]=val;			break;
-	}
+    switch(hdr->datatype)
+    {	case UCHAR: ((unsigned char*)img)[i]=val;	break;
+        case SHORT: ((short*)img)[i]=val;			break;
+        case INT:	((int*)img)[i]=val;				break;
+        case FLOAT:	((float*)img)[i]=val;			break;
+    }
 }
 void setValue2(float val, int i, AnalyzeHeader *theHdr, char *theImg)
 {
-	switch(theHdr->datatype)
-	{	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
-		case SHORT: ((short*)theImg)[i]=val;			break;
-		case INT:	((int*)theImg)[i]=val;				break;
-		case FLOAT:	((float*)theImg)[i]=val;			break;
-	}
+    switch(theHdr->datatype)
+    {	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
+        case SHORT: ((short*)theImg)[i]=val;			break;
+        case INT:	((int*)theImg)[i]=val;				break;
+        case FLOAT:	((float*)theImg)[i]=val;			break;
+    }
 }
 #pragma mark -
 #pragma mark [ Utilities ]
@@ -150,109 +173,109 @@ void checkEndianness(void)
 #pragma mark -
 void boxFilter1(int r)
 {
-	int		i,j,k;
-	float	sum,val;
-	float	*tmpx=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
-	float	*tmpy=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
-	float	*tmpz=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
-	
-	// x direction
-	for(k=0;k<dim[2];k++)
-	for(j=0;j<dim[1];j++)
-	{
-		sum=0;
-		for(i=0;i<r;i++)
-			sum+=getValue(i,j,k);
-		for(i=0;i<=r;i++)
-		{
-			sum+=getValue(i+r,j,k);
-			val=sum/(double)(r+1+i);
-			tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-		for(i=r+1;i<dim[0]-r;i++)
-		{
-			sum+=getValue(i+r,j,k);
-			sum-=getValue(i-r-1,j,k);
-			val=sum/(double)(2*r+1);
-			tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-		for(i=dim[0]-r;i<dim[0];i++)
-		{
-			sum-=getValue(i-r-1,j,k);
-			val=sum/(double)(r+(dim[0]-i));
-			tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-	}
-	// y direction
-	for(k=0;k<dim[2];k++)
-	for(i=0;i<dim[0];i++)
-	{
-		sum=0;
-		for(j=0;j<r;j++)
-			sum+=tmpx[k*dim[1]*dim[0]+j*dim[0]+i];
-		for(j=0;j<=r;j++)
-		{
-			sum+=tmpx[k*dim[1]*dim[0]+(j+r)*dim[0]+i];
-			val=sum/(double)(r+1+j);
-			tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-		for(j=r+1;j<dim[1]-r;j++)
-		{
-			sum+=tmpx[k*dim[1]*dim[0]+(j+r)*dim[0]+i];
-			sum-=tmpx[k*dim[1]*dim[0]+(j-r-1)*dim[0]+i];
-			val=sum/(double)(2*r+1);
-			tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-		for(j=dim[1]-r;j<dim[1];j++)
-		{
-			sum-=tmpx[k*dim[1]*dim[0]+(j-r-1)*dim[0]+i];
-			val=sum/(double)(r+(dim[1]-j));
-			tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-	}
+    int		i,j,k;
+    float	sum,val;
+    float	*tmpx=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+    float	*tmpy=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+    float	*tmpz=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
 
-	// z direction
-	for(j=0;j<dim[1];j++)
-	for(i=0;i<dim[0];i++)
-	{
-		sum=0;
-		for(k=0;k<r;k++)
-			sum+=tmpy[k*dim[1]*dim[0]+j*dim[0]+i];
-		for(k=0;k<=r;k++)
-		{
-			sum+=tmpy[(k+r)*dim[1]*dim[0]+j*dim[0]+i];
-			val=sum/(double)(r+1+k);
-			tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-		for(k=r+1;k<dim[2]-r;k++)
-		{
-			sum+=tmpy[(k+r)*dim[1]*dim[0]+j*dim[0]+i];
-			sum-=tmpy[(k-r-1)*dim[1]*dim[0]+j*dim[0]+i];
-			val=sum/(double)(2*r+1);
-			tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-		for(k=dim[2]-r;k<dim[2];k++)
-		{
-			sum-=tmpy[(k-r-1)*dim[1]*dim[0]+j*dim[0]+i];
-			val=sum/(double)(r+(dim[2]-k));
-			tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
-		}
-	}
+    // x direction
+    for(k=0;k<dim[2];k++)
+    for(j=0;j<dim[1];j++)
+    {
+        sum=0;
+        for(i=0;i<r;i++)
+            sum+=getValue(i,j,k);
+        for(i=0;i<=r;i++)
+        {
+            sum+=getValue(i+r,j,k);
+            val=sum/(double)(r+1+i);
+            tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(i=r+1;i<dim[0]-r;i++)
+        {
+            sum+=getValue(i+r,j,k);
+            sum-=getValue(i-r-1,j,k);
+            val=sum/(double)(2*r+1);
+            tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(i=dim[0]-r;i<dim[0];i++)
+        {
+            sum-=getValue(i-r-1,j,k);
+            val=sum/(double)(r+(dim[0]-i));
+            tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+    }
+    // y direction
+    for(k=0;k<dim[2];k++)
+    for(i=0;i<dim[0];i++)
+    {
+        sum=0;
+        for(j=0;j<r;j++)
+            sum+=tmpx[k*dim[1]*dim[0]+j*dim[0]+i];
+        for(j=0;j<=r;j++)
+        {
+            sum+=tmpx[k*dim[1]*dim[0]+(j+r)*dim[0]+i];
+            val=sum/(double)(r+1+j);
+            tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(j=r+1;j<dim[1]-r;j++)
+        {
+            sum+=tmpx[k*dim[1]*dim[0]+(j+r)*dim[0]+i];
+            sum-=tmpx[k*dim[1]*dim[0]+(j-r-1)*dim[0]+i];
+            val=sum/(double)(2*r+1);
+            tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(j=dim[1]-r;j<dim[1];j++)
+        {
+            sum-=tmpx[k*dim[1]*dim[0]+(j-r-1)*dim[0]+i];
+            val=sum/(double)(r+(dim[1]-j));
+            tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+    }
 
-	for(k=0;k<dim[2];k++)
-	for(j=0;j<dim[1];j++)
-	for(i=0;i<dim[0];i++)
-		setValue((float)tmpz[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
+    // z direction
+    for(j=0;j<dim[1];j++)
+    for(i=0;i<dim[0];i++)
+    {
+        sum=0;
+        for(k=0;k<r;k++)
+            sum+=tmpy[k*dim[1]*dim[0]+j*dim[0]+i];
+        for(k=0;k<=r;k++)
+        {
+            sum+=tmpy[(k+r)*dim[1]*dim[0]+j*dim[0]+i];
+            val=sum/(double)(r+1+k);
+            tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(k=r+1;k<dim[2]-r;k++)
+        {
+            sum+=tmpy[(k+r)*dim[1]*dim[0]+j*dim[0]+i];
+            sum-=tmpy[(k-r-1)*dim[1]*dim[0]+j*dim[0]+i];
+            val=sum/(double)(2*r+1);
+            tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(k=dim[2]-r;k<dim[2];k++)
+        {
+            sum-=tmpy[(k-r-1)*dim[1]*dim[0]+j*dim[0]+i];
+            val=sum/(double)(r+(dim[2]-k));
+            tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+    }
 
-	free(tmpx);
-	free(tmpy);
-	free(tmpz);
+    for(k=0;k<dim[2];k++)
+    for(j=0;j<dim[1];j++)
+    for(i=0;i<dim[0];i++)
+        setValue((float)tmpz[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
+
+    free(tmpx);
+    free(tmpy);
+    free(tmpz);
 }
 void boxFilter(int radius, int iter)
 {
-	int	i;
-	for(i=0;i<iter;i++)
-		boxFilter1(radius);
+    int	i;
+    for(i=0;i<iter;i++)
+        boxFilter1(radius);
 }
 
 #define STACK 600000
@@ -260,7 +283,7 @@ int connected(int x, int y, int z, int label)
 {
 	int		n,i,j,k;
 	int		dx,dy,dz;
-	int		dire[6]={0,0,0,0,0,0};
+	int		dire[6]={0,0,0,0,0,0}; // +y +x -y -x +z -z
 	int		nstack=0;
 	short	stack[STACK][3];
 	char	dstack[STACK];
@@ -272,6 +295,7 @@ int connected(int x, int y, int z, int label)
 	n=0;
 	for(;;)
 	{
+		printf("%i %i %i. %i\n",x,y,z,nstack);
 		tmp[z*dim[1]*dim[0]+y*dim[0]+x]=1;
 		n++;
 		
@@ -1437,19 +1461,22 @@ void createNiiHeader(char *txtpath, char *hdrpath)
     
     free(h);
 }
+/**
+ * @desc creates a new 'short' nifti1 volume
+ */
 void newNiiVolume(int dx, int dy, int dz, float px, float py, float pz, float ox, float oy, float oz)
 {
     int sz;
     char *addr;
     nifti_1_header *h;
-    
+
     sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
-	addr=calloc(sz,1);
+    addr=calloc(sz,1);
 
     hdr=(AnalyzeHeader*)addr;
     img=(char*)(addr+sizeof(nifti_1_header));
     h=(nifti_1_header*)hdr;
-    
+
     h->sizeof_hdr=348;
     h->dim[0]=3;
     h->dim[1]=dx;
@@ -1730,6 +1757,61 @@ float Max(float x, float y)
 {
     return (x>y)?x:y;
 }
+void resize(int dx, int dy, int dz)
+{
+    long          sz;
+    int           i,j,k;
+    int           oi,oj,ok;
+    char          *addr;
+    AnalyzeHeader *theHdr;
+    char          *theImg;
+    float         val;
+
+    switch(hdr->datatype)
+    {
+        case UCHAR:
+            sz=dx*dy*dz*sizeof(char)+sizeof(nifti_1_header);
+            break;
+        case SHORT:
+            sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
+            break;
+        case INT:
+            sz=dx*dy*dz*sizeof(int)+sizeof(nifti_1_header);
+            break;
+        case FLOAT:
+            sz=dx*dy*dz*sizeof(float)+sizeof(nifti_1_header);
+            break;
+    }
+    addr=calloc(sz,1);
+    memcpy(addr, (char*)hdr, sizeof(nifti_1_header));
+    theHdr=(AnalyzeHeader*)addr;
+    theImg=(char*)(addr+sizeof(nifti_1_header));
+    theHdr->dim[1]=dx;
+    theHdr->dim[2]=dy;
+    theHdr->dim[3]=dz;
+
+    // offsets
+    oi=(dx-dim[0])/2;
+    oj=(dx-dim[1])/2;
+    ok=(dx-dim[2])/2;
+
+    // get data from original volume, copy it into new volume
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        val=getValue(i,j,k);
+        setValue2(val,(k+ok)*dy*dx+(j+oj)*dx+(i+oi),theHdr,theImg);
+    }
+
+    // update reference data
+    dim[0]=dx;
+    dim[1]=dy;
+    dim[2]=dz;
+    free((char*)hdr);
+    hdr=theHdr;
+    img=theImg;
+}
 void strokeMesh(char *path)
 {
     int     i,j,k,l;
@@ -2005,7 +2087,7 @@ void sampleMesh(char *mesh,char *result)
 int getformatindex(char *path)
 {
     char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt","inr"};
-    int     i,n=7; // number of recognised formats
+    int     i,n=sizeof(formats)/sizeof(long); // number of recognised formats
     int     found,index;
     char    *extension;
     
@@ -2794,6 +2876,7 @@ void xor(char *path)
 -volume                         calculate volume
 -zigzag                         print volume values in zigzag order
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
+-resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
 -strokeMesh str                 set the vertices of the mesh (text format) at input path to value=max+1
 -surfaceNets level,path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
 -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
@@ -2990,7 +3073,13 @@ int main (int argc, const char * argv[])
 		{
 			float	level;
 			int		direction;
-			sscanf(argv[++i]," %f , %i ",&level,&direction);
+			int     n;
+			n=sscanf(argv[++i]," %f , %i ",&level,&direction);
+			if(n!=2)
+			{
+			    printf("ERROR: threshold takes two arguments, level and direction\n");
+			    return 1;
+			}
 			threshold(level,direction);
 		}
 		else
@@ -3005,10 +3094,23 @@ int main (int argc, const char * argv[])
             zigzag();
         }
         else
-		if(strcmp(argv[i],"-decompose")==0)		// decompose(basename) a volume with many values into volumes with one single value
-		{
-			decompose((char*)argv[++i]);
-		}
+        if(strcmp(argv[i],"-decompose")==0)		// decompose(basename) a volume with many values into volumes with one single value
+        {
+            decompose((char*)argv[++i]);
+        }
+        else
+        if(strcmp(argv[i],"-resize")==0)		// resize(x,y,z) resize the volume to the new x, y, z dimensions, keeping the original data at the center
+        {
+            char *str=(char*)argv[++i];
+            int n, x, y, z;
+            n=sscanf(str, " %i, %i, %i ", &x, &y, &z);
+            if(n!=3)
+            {
+                printf("ERROR: resize requires 3 arguments, the new dimensions x, y and z\n");
+                return 1;
+            }
+            resize(x,y,z);
+        }
         else
         if(strcmp(argv[i],"-strokeMesh")==0)		// strokeMesh(path) set the voxels intersecting the mesh (txt or ply format) at input path to value=max+1
         {
