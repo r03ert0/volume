@@ -130,17 +130,23 @@ float getValue3(int x, int y, int z, AnalyzeHeader *theHdr, char *theImg)
 }
 void setValue(float val, int x, int y, int z)
 {
+    int i = z*dim[1]*dim[0]+y*dim[0]+x;
+    if( i >= dim[0]*dim[1]*dim[2] || i<0 )
+    {
+        printf("value %i, %i, %i is out of bounds [%i, %i, %i]\n",x,y,z,dim[0],dim[1],dim[2]);
+        return;
+    }
     switch(hdr->datatype)
-    {	case UCHAR: ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;			break;
-        case SHORT: ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-        case INT:	((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-        case FLOAT:	((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
+    {   case UCHAR: ((unsigned char*)img)[i]=val; break;
+        case SHORT: ((short*)img)[i]=val;         break;
+        case INT:   ((int*)img)[i]=val;           break;
+        case FLOAT: ((float*)img)[i]=val;         break;
     }
 }
 void setValue1(float val, int i)
 {
     switch(hdr->datatype)
-    {	case UCHAR: ((unsigned char*)img)[i]=val;	break;
+    {   case UCHAR: ((unsigned char*)img)[i]=val;	break;
         case SHORT: ((short*)img)[i]=val;			break;
         case INT:	((int*)img)[i]=val;				break;
         case FLOAT:	((float*)img)[i]=val;			break;
@@ -281,76 +287,76 @@ void boxFilter(int radius, int iter)
 #define STACK 600000
 int connected(int x, int y, int z, int label)
 {
-	int		n,i,j,k;
-	int		dx,dy,dz;
-	int		dire[6]={0,0,0,0,0,0}; // +y +x -y -x +z -z
-	int		nstack=0;
-	short	stack[STACK][3];
-	char	dstack[STACK];
-	int		empty,mark;
-	char	*tmp;
+    int		n,i,j,k;
+    int		dx,dy,dz;
+    int		dire[6]={0,0,0,0,0,0}; // +y +x -y -x +z -z
+    int		nstack=0;
+    short	stack[STACK][3];
+    char	dstack[STACK];
+    int		empty,mark;
+    char	*tmp;
 
-	tmp=(char*)calloc(dim[0]*dim[1]*dim[2],sizeof(char));
+    tmp=(char*)calloc(dim[0]*dim[1]*dim[2],sizeof(char));
 
-	n=0;
-	for(;;)
-	{
-		printf("%i %i %i. %i\n",x,y,z,nstack);
-		tmp[z*dim[1]*dim[0]+y*dim[0]+x]=1;
-		n++;
-		
-		for(k=0;k<6;k++)
-		{
-			dx = (-1)*(	k==3 ) + ( 1)*( k==1 );
-			dy = (-1)*( k==2 ) + ( 1)*( k==0 );
-			dz = (-1)*( k==5 ) + ( 1)*( k==4 );
+    n=0;
+    for(;;)
+    {
+        //printf("%i %i %i. %i\n",x,y,z,nstack);
+        tmp[z*dim[1]*dim[0]+y*dim[0]+x]=1;
+        n++;
+    
+        for(k=0;k<6;k++)
+        {
+            dx = (-1)*(	k==3 ) + ( 1)*( k==1 );
+            dy = (-1)*( k==2 ) + ( 1)*( k==0 );
+            dz = (-1)*( k==5 ) + ( 1)*( k==4 );
 
-			if(	z+dz>=0 && z+dz<dim[2] &&
-				y+dy>=0 && y+dy<dim[1] &&
-				x+dx>=0 && x+dx<dim[0] )
-			{
-				empty=(getValue(x+dx,y+dy,z+dz)==1);
-				mark = tmp[(z+dz)*dim[1]*dim[0]+(y+dy)*dim[0]+(x+dx)];
-				if( empty && !mark && !dire[k])
-				{
-					dire[k] = 1;
-					dstack[nstack] = k+1;
-					stack[nstack][0]=x+dx;
-					stack[nstack][1]=y+dy;
-					stack[nstack][2]=z+dz;
-					nstack++;
-				}
-				else
-					if( dire[k] && !empty && !mark)
-						dire[k] = 0;
-			}
-		}
-		if(nstack>STACK-10)
-		{
-			printf("StackOverflow\n");
-			break;
-		}
-		if(nstack)
-		{
-			nstack--;
-			x = stack[nstack][0];
-			y = stack[nstack][1];
-			z = stack[nstack][2];
-			for(k=0;k<6;k++)
-				dire[k] = (dstack[nstack]==(k+1))?0:dire[k];
-		}
-		else
-			break;
-	}
-	
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(tmp[k*dim[1]*dim[0]+j*dim[0]+i]==1)
-		setValue(label,i,j,k);
-	free(tmp);
-	
-	return n;
+            if(	z+dz>=0 && z+dz<dim[2] &&
+                y+dy>=0 && y+dy<dim[1] &&
+                x+dx>=0 && x+dx<dim[0] )
+            {
+                empty=(getValue(x+dx,y+dy,z+dz)==1);
+                mark = tmp[(z+dz)*dim[1]*dim[0]+(y+dy)*dim[0]+(x+dx)];
+                if( empty && !mark && !dire[k])
+                {
+                    dire[k] = 1;
+                    dstack[nstack] = k+1;
+                    stack[nstack][0]=x+dx;
+                    stack[nstack][1]=y+dy;
+                    stack[nstack][2]=z+dz;
+                    nstack++;
+                }
+                else
+                    if( dire[k] && !empty && !mark)
+                        dire[k] = 0;
+            }
+        }
+        if(nstack>STACK-10)
+        {
+            printf("StackOverflow\n");
+            break;
+        }
+        if(nstack)
+        {
+            nstack--;
+            x = stack[nstack][0];
+            y = stack[nstack][1];
+            z = stack[nstack][2];
+            for(k=0;k<6;k++)
+                dire[k] = (dstack[nstack]==(k+1))?0:dire[k];
+        }
+        else
+            break;
+    }
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(tmp[k*dim[1]*dim[0]+j*dim[0]+i]==1)
+        setValue(label,i,j,k);
+    free(tmp);
+
+    return n;
 }
 void largestConnected(void)
 {
@@ -1857,6 +1863,8 @@ void strokeMesh(char *path)
     */
     
     // transform vertex coordinates to voxel indices
+    printf("offset: %f, %f, %f\n",h->srow_x[3],h->srow_y[3],h->srow_z[3]);
+    printf("pixdim: %f, %f, %f\n",pixdim[0],pixdim[1],pixdim[2]);
     for(i=0;i<np;i++)
     {
         p[i].x=(p[i].x-h->srow_x[3])/pixdim[0];
@@ -3180,9 +3188,9 @@ int main (int argc, const char * argv[])
             float px,py,pz;
             float ox,oy,oz;
             char *str=(char*)argv[++i];
-            n=sscanf(str,"%i,%i,%i,%f,%f,%f,%f,%f,%f",&dx,&dy,&dz,&px,&py,&pz,&ox,&oy,&oz);
+            n=sscanf(str," %i , %i , %i , %f , %f , %f , %f , %f , %f ",&dx,&dy,&dz,&px,&py,&pz,&ox,&oy,&oz);
             if(n!=9) {
-                printf("ERROR: You have to provide 6 values: dimx, dimy, dimz, pixdimx, pixdimy, pixdimz,offx, offy, offz\n");
+                printf("ERROR: You have to provide 9 values: dimx, dimy, dimz, pixdimx, pixdimy, pixdimz,offx, offy, offz. %i were provided (%s).\n", n, str);
                 return 1;
             }
             newNiiVolume(dx,dy,dz,px,py,pz,ox,oy,oz);
@@ -3194,7 +3202,7 @@ int main (int argc, const char * argv[])
             int   n;
             n=sscanf(argv[++i]," %f ",&val);
             if(n!=1) {
-                printf("ERROR: You have to provide 1 value to multiply\n");
+                printf("ERROR: You have to provide 1 value to multiply. %i were provided.\n", n);
                 return 1;
             }
             mult(val);
