@@ -1,7 +1,7 @@
-//char	version[]="volume, v2, roberto toro, 10 December 2010";	// added -decompose
-//char	version[]="volume, v3, roberto toro, 9 August 2015";	// added support to nii and nii.gz
-char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets for isosurface extraction
-char	version[]="volume, v5, roberto toro, 10 Decembre 2017";	// added resize
+//char version[]="volume, v2, roberto toro, 10 December 2010"; // added -decompose
+//char version[]="volume, v3, roberto toro, 9 August 2015"; // added support to nii and nii.gz
+//char version[]="volume, v4, roberto toro, 9 August 2015"; // added surfaceNets for isosurface extraction
+char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 
 #include <stdio.h>
 #include "Analyze.h"
