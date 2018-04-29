@@ -1,6 +1,7 @@
-//char	version[]="volume, v2, roberto toro, 10 December 2010";	// added -decompose
-//char	version[]="volume, v3, roberto toro, 9 August 2015";	// added support to nii and nii.gz
-char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets for isosurface extraction
+//char version[]="volume, v2, roberto toro, 10 December 2010"; // added -decompose
+//char version[]="volume, v3, roberto toro, 9 August 2015"; // added support to nii and nii.gz
+//char version[]="volume, v4, roberto toro, 9 August 2015"; // added surfaceNets for isosurface extraction
+char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 
 #include <stdio.h>
 #include "Analyze.h"
@@ -19,6 +20,8 @@ char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets f
 #define kNiftiGZVolume	 4
 #define kSchematicVolume 5
 #define kTextVolume      6
+#define kINRIMAGEVolume  7
+
 typedef struct {
     float x,y,z;
 } float3D;
@@ -26,9 +29,9 @@ typedef struct {
     int a,b,c;
 } int3D;
 typedef struct {
-    int np,nt;
+    int     np,nt;
     float3D *p;
-    int3D *t;
+    int3D   *t;
 } Mesh;
 
 AnalyzeHeader	*hdr;
@@ -82,46 +85,81 @@ float getValue1(int index)
     }
     return val;
 }
-
-void setValue(float val, int x, int y, int z)
-{
-	switch(hdr->datatype)
-	{	case UCHAR: ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;			break;
-		case SHORT: ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-		case INT:	((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-		case FLOAT:	((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-	}
-}
 float getValue2(int i, AnalyzeHeader *theHdr, char *theImg)
 {
-	float		val;
-	RGBValue	rgb;
-	
-	if(theHdr->datatype==RGB)
-	{
-		rgb=((RGBValue*)theImg)[i];
-		val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
-	}
-	else
-	{
-		switch(theHdr->datatype)
-		{	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-			case SHORT: val=        ((short*)theImg)[i];	break;
-			case INT:	val=          ((int*)theImg)[i];	break;
-			case FLOAT:	val=        ((float*)theImg)[i];	break;
-		}
-	}
-	return val;
-}
+    float		val;
+    RGBValue	rgb;
 
+    if(theHdr->datatype==RGB)
+    {
+        rgb=((RGBValue*)theImg)[i];
+        val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+    }
+    else
+    {
+        switch(theHdr->datatype)
+        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
+            case SHORT: val=        ((short*)theImg)[i];	break;
+            case INT:	val=          ((int*)theImg)[i];	break;
+            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        }
+    }
+    return val;
+}
+float getValue3(int x, int y, int z, AnalyzeHeader *theHdr, char *theImg)
+{
+    float		val;
+    RGBValue	rgb;
+    int         i=z*dim[1]*dim[0]+y*dim[0]+x;
+
+    if(theHdr->datatype==RGB)
+    {
+        rgb=((RGBValue*)theImg)[i];
+        val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+    }
+    else
+    {
+        switch(theHdr->datatype)
+        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
+            case SHORT: val=        ((short*)theImg)[i];	break;
+            case INT:	val=          ((int*)theImg)[i];	break;
+            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        }
+    }
+    return val;
+}
+void setValue(float val, int x, int y, int z)
+{
+    int i = z*dim[1]*dim[0]+y*dim[0]+x;
+    if( i >= dim[0]*dim[1]*dim[2] || i<0 )
+    {
+        printf("value %i, %i, %i is out of bounds [%i, %i, %i]\n",x,y,z,dim[0],dim[1],dim[2]);
+        return;
+    }
+    switch(hdr->datatype)
+    {   case UCHAR: ((unsigned char*)img)[i]=val; break;
+        case SHORT: ((short*)img)[i]=val;         break;
+        case INT:   ((int*)img)[i]=val;           break;
+        case FLOAT: ((float*)img)[i]=val;         break;
+    }
+}
+void setValue1(float val, int i)
+{
+    switch(hdr->datatype)
+    {   case UCHAR: ((unsigned char*)img)[i]=val;	break;
+        case SHORT: ((short*)img)[i]=val;			break;
+        case INT:	((int*)img)[i]=val;				break;
+        case FLOAT:	((float*)img)[i]=val;			break;
+    }
+}
 void setValue2(float val, int i, AnalyzeHeader *theHdr, char *theImg)
 {
-	switch(theHdr->datatype)
-	{	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
-		case SHORT: ((short*)theImg)[i]=val;			break;
-		case INT:	((int*)theImg)[i]=val;				break;
-		case FLOAT:	((float*)theImg)[i]=val;			break;
-	}
+    switch(theHdr->datatype)
+    {	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
+        case SHORT: ((short*)theImg)[i]=val;			break;
+        case INT:	((int*)theImg)[i]=val;				break;
+        case FLOAT:	((float*)theImg)[i]=val;			break;
+    }
 }
 #pragma mark -
 #pragma mark [ Utilities ]
@@ -139,78 +177,186 @@ void checkEndianness(void)
         endianness=kINTEL;
 }
 #pragma mark -
+void boxFilter1(int r)
+{
+    int		i,j,k;
+    float	sum,val;
+    float	*tmpx=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+    float	*tmpy=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+    float	*tmpz=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+
+    // x direction
+    for(k=0;k<dim[2];k++)
+    for(j=0;j<dim[1];j++)
+    {
+        sum=0;
+        for(i=0;i<r;i++)
+            sum+=getValue(i,j,k);
+        for(i=0;i<=r;i++)
+        {
+            sum+=getValue(i+r,j,k);
+            val=sum/(double)(r+1+i);
+            tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(i=r+1;i<dim[0]-r;i++)
+        {
+            sum+=getValue(i+r,j,k);
+            sum-=getValue(i-r-1,j,k);
+            val=sum/(double)(2*r+1);
+            tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(i=dim[0]-r;i<dim[0];i++)
+        {
+            sum-=getValue(i-r-1,j,k);
+            val=sum/(double)(r+(dim[0]-i));
+            tmpx[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+    }
+    // y direction
+    for(k=0;k<dim[2];k++)
+    for(i=0;i<dim[0];i++)
+    {
+        sum=0;
+        for(j=0;j<r;j++)
+            sum+=tmpx[k*dim[1]*dim[0]+j*dim[0]+i];
+        for(j=0;j<=r;j++)
+        {
+            sum+=tmpx[k*dim[1]*dim[0]+(j+r)*dim[0]+i];
+            val=sum/(double)(r+1+j);
+            tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(j=r+1;j<dim[1]-r;j++)
+        {
+            sum+=tmpx[k*dim[1]*dim[0]+(j+r)*dim[0]+i];
+            sum-=tmpx[k*dim[1]*dim[0]+(j-r-1)*dim[0]+i];
+            val=sum/(double)(2*r+1);
+            tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(j=dim[1]-r;j<dim[1];j++)
+        {
+            sum-=tmpx[k*dim[1]*dim[0]+(j-r-1)*dim[0]+i];
+            val=sum/(double)(r+(dim[1]-j));
+            tmpy[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+    }
+
+    // z direction
+    for(j=0;j<dim[1];j++)
+    for(i=0;i<dim[0];i++)
+    {
+        sum=0;
+        for(k=0;k<r;k++)
+            sum+=tmpy[k*dim[1]*dim[0]+j*dim[0]+i];
+        for(k=0;k<=r;k++)
+        {
+            sum+=tmpy[(k+r)*dim[1]*dim[0]+j*dim[0]+i];
+            val=sum/(double)(r+1+k);
+            tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(k=r+1;k<dim[2]-r;k++)
+        {
+            sum+=tmpy[(k+r)*dim[1]*dim[0]+j*dim[0]+i];
+            sum-=tmpy[(k-r-1)*dim[1]*dim[0]+j*dim[0]+i];
+            val=sum/(double)(2*r+1);
+            tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+        for(k=dim[2]-r;k<dim[2];k++)
+        {
+            sum-=tmpy[(k-r-1)*dim[1]*dim[0]+j*dim[0]+i];
+            val=sum/(double)(r+(dim[2]-k));
+            tmpz[k*dim[1]*dim[0]+j*dim[0]+i]=val;
+        }
+    }
+
+    for(k=0;k<dim[2];k++)
+    for(j=0;j<dim[1];j++)
+    for(i=0;i<dim[0];i++)
+        setValue((float)tmpz[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
+
+    free(tmpx);
+    free(tmpy);
+    free(tmpz);
+}
+void boxFilter(int radius, int iter)
+{
+    int	i;
+    for(i=0;i<iter;i++)
+        boxFilter1(radius);
+}
+
 #define STACK 600000
 int connected(int x, int y, int z, int label)
 {
-	int		n,i,j,k;
-	int		dx,dy,dz;
-	int		dire[6]={0,0,0,0,0,0};
-	int		nstack=0;
-	short	stack[STACK][3];
-	char	dstack[STACK];
-	int		empty,mark;
-	char	*tmp;
+    int		n,i,j,k;
+    int		dx,dy,dz;
+    int		dire[6]={0,0,0,0,0,0}; // +y +x -y -x +z -z
+    int		nstack=0;
+    short	stack[STACK][3];
+    char	dstack[STACK];
+    int		empty,mark;
+    char	*tmp;
 
-	tmp=(char*)calloc(dim[0]*dim[1]*dim[2],sizeof(char));
+    tmp=(char*)calloc(dim[0]*dim[1]*dim[2],sizeof(char));
 
-	n=0;
-	for(;;)
-	{
-		tmp[z*dim[1]*dim[0]+y*dim[0]+x]=1;
-		n++;
-		
-		for(k=0;k<6;k++)
-		{
-			dx = (-1)*(	k==3 ) + ( 1)*( k==1 );
-			dy = (-1)*( k==2 ) + ( 1)*( k==0 );
-			dz = (-1)*( k==5 ) + ( 1)*( k==4 );
+    n=0;
+    for(;;)
+    {
+        //printf("%i %i %i. %i\n",x,y,z,nstack);
+        tmp[z*dim[1]*dim[0]+y*dim[0]+x]=1;
+        n++;
+    
+        for(k=0;k<6;k++)
+        {
+            dx = (-1)*(	k==3 ) + ( 1)*( k==1 );
+            dy = (-1)*( k==2 ) + ( 1)*( k==0 );
+            dz = (-1)*( k==5 ) + ( 1)*( k==4 );
 
-			if(	z+dz>=0 && z+dz<dim[2] &&
-				y+dy>=0 && y+dy<dim[1] &&
-				x+dx>=0 && x+dx<dim[0] )
-			{
-				empty=(getValue(x+dx,y+dy,z+dz)==1);
-				mark = tmp[(z+dz)*dim[1]*dim[0]+(y+dy)*dim[0]+(x+dx)];
-				if( empty && !mark && !dire[k])
-				{
-					dire[k] = 1;
-					dstack[nstack] = k+1;
-					stack[nstack][0]=x+dx;
-					stack[nstack][1]=y+dy;
-					stack[nstack][2]=z+dz;
-					nstack++;
-				}
-				else
-					if( dire[k] && !empty && !mark)
-						dire[k] = 0;
-			}
-		}
-		if(nstack>STACK-10)
-		{
-			printf("StackOverflow\n");
-			break;
-		}
-		if(nstack)
-		{
-			nstack--;
-			x = stack[nstack][0];
-			y = stack[nstack][1];
-			z = stack[nstack][2];
-			for(k=0;k<6;k++)
-				dire[k] = (dstack[nstack]==(k+1))?0:dire[k];
-		}
-		else
-			break;
-	}
-	
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(tmp[k*dim[1]*dim[0]+j*dim[0]+i]==1)
-		setValue(label,i,j,k);
-	free(tmp);
-	
-	return n;
+            if(	z+dz>=0 && z+dz<dim[2] &&
+                y+dy>=0 && y+dy<dim[1] &&
+                x+dx>=0 && x+dx<dim[0] )
+            {
+                empty=(getValue(x+dx,y+dy,z+dz)==1);
+                mark = tmp[(z+dz)*dim[1]*dim[0]+(y+dy)*dim[0]+(x+dx)];
+                if( empty && !mark && !dire[k])
+                {
+                    dire[k] = 1;
+                    dstack[nstack] = k+1;
+                    stack[nstack][0]=x+dx;
+                    stack[nstack][1]=y+dy;
+                    stack[nstack][2]=z+dz;
+                    nstack++;
+                }
+                else
+                    if( dire[k] && !empty && !mark)
+                        dire[k] = 0;
+            }
+        }
+        if(nstack>STACK-10)
+        {
+            printf("StackOverflow\n");
+            break;
+        }
+        if(nstack)
+        {
+            nstack--;
+            x = stack[nstack][0];
+            y = stack[nstack][1];
+            z = stack[nstack][2];
+            for(k=0;k<6;k++)
+                dire[k] = (dstack[nstack]==(k+1))?0:dire[k];
+        }
+        else
+            break;
+    }
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(tmp[k*dim[1]*dim[0]+j*dim[0]+i]==1)
+        setValue(label,i,j,k);
+    free(tmp);
+
+    return n;
 }
 void largestConnected(void)
 {
@@ -235,6 +381,7 @@ void largestConnected(void)
 		}
 		label++;
 	}
+	printf("labelmax=%i\n",labelmax);
 
 	for(i=0;i<dim[0];i++)
 	for(j=0;j<dim[1];j++)
@@ -824,9 +971,12 @@ void drawSlice(char *path, char *cmap, char *ori, float slice)
     
     int slicenb;
     
-    if (floorf(slice) == slice){ //slice is an integer (considered as slice number)
+    if (floorf(slice) == slice)
+    { //slice is an integer (considered as slice number)
         slicenb=1;
-    } else {
+    }
+    else
+    {
         slicenb=0;	//slice is a float (considered as percentage)
     }
     
@@ -1061,15 +1211,15 @@ void showNiiHeader(void)
     nifti_1_header *h=(nifti_1_header*)hdr;
 
     printf("sizeof_hdr:	%i\n",                       h->sizeof_hdr);        /*!< MUST be 348           */  /* int sizeof_hdr;      */
-    printf("data_type[10]:	%s\n",                   c2s(h->data_type,10)); /*!< ++UNUSED++            */  /* char data_type[10];  */
-    printf("db_name[18]:	%s\n",                   c2s(h->db_name,18));   /*!< ++UNUSED++            */  /* char db_name[18];    */
+    printf("data_type:	%s\n",                   c2s(h->data_type,10)); /*!< ++UNUSED++            */  /* char data_type[10];  */
+    printf("db_name:	%s\n",                   c2s(h->db_name,18));   /*!< ++UNUSED++            */  /* char db_name[18];    */
     printf("extents:	%i\n",                       h->extents);           /*!< ++UNUSED++            */  /* int extents;         */
     printf("session_error:	%i\n",                   h->session_error);     /*!< ++UNUSED++            */  /* short session_error; */
     printf("regular:	%c\n",                       h->regular);           /*!< ++UNUSED++            */  /* char regular;        */
     printf("dim_info:	%c\n",                       h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
 
                                                 /*--- was image_dimension substruct ---*/
-    printf("dim[8]:	%i,%i,%i,%i,%i,%i,%i,%i\n",      h->dim[0],h->dim[1],h->dim[2],h->dim[3],h->dim[4],h->dim[5],h->dim[6],h->dim[7]);            /*!< Data array dimensions.*/  /* short dim[8];        */
+    printf("dim:	%i,%i,%i,%i,%i,%i,%i,%i\n",      h->dim[0],h->dim[1],h->dim[2],h->dim[3],h->dim[4],h->dim[5],h->dim[6],h->dim[7]);            /*!< Data array dimensions.*/  /* short dim[8];        */
     printf("intent_p1:	%f\n",                       h->intent_p1 );        /*!< 1st intent parameter. */  /* short unused8;       */
                                                                                                           /* short unused9;       */
     printf("intent_p2:	%f\n",                       h->intent_p2 );        /*!< 2nd intent parameter. */  /* short unused10;      */
@@ -1080,7 +1230,7 @@ void showNiiHeader(void)
     printf("datatype:	%i\n",                       h->datatype);          /*!< Defines data type!    */  /* short datatype;      */
     printf("bitpix:	%i\n",                           h->bitpix);            /*!< Number bits/voxel.    */  /* short bitpix;        */
     printf("slice_start:	%i\n",                   h->slice_start);       /*!< First slice index.    */  /* short dim_un0;       */
-    printf("pixdim[8]:	%f,%f,%f,%f,%f,%f,%f,%f\n",  h->pixdim[0],h->pixdim[1],h->pixdim[2],h->pixdim[3],h->pixdim[4],h->pixdim[5],h->pixdim[6],h->pixdim[7]);         /*!< Grid spacings.        */  /* float pixdim[8];     */
+    printf("pixdim:	%f,%f,%f,%f,%f,%f,%f,%f\n",  h->pixdim[0],h->pixdim[1],h->pixdim[2],h->pixdim[3],h->pixdim[4],h->pixdim[5],h->pixdim[6],h->pixdim[7]);         /*!< Grid spacings.        */  /* float pixdim[8];     */
     printf("vox_offset:	%f\n",                       h->vox_offset);        /*!< Offset into .nii file */  /* float vox_offset;    */
     printf("scl_slope:	%f\n",                       h->scl_slope );        /*!< Data scaling:	slope.  */  /* float funused1;      */
     printf("scl_inter:	%f\n",                       h->scl_inter );        /*!< Data scaling:	offset. */  /* float funused2;      */
@@ -1095,8 +1245,8 @@ void showNiiHeader(void)
     printf("glmin:	%i\n",                           h->glmin);             /*!< ++UNUSED++            */  /* int glmin;           */
 
                                                 /*--- was data_history substruct ---*/
-    printf("descrip[80]:	%s\n",                   c2s(h->descrip,80));   /*!< any text you like.    */  /* char descrip[80];    */
-    printf("aux_file[24]:	%s\n",                   c2s(h->aux_file,24));  /*!< auxiliary filename.   */  /* char aux_file[24];   */
+    printf("descrip:	%s\n",                   c2s(h->descrip,80));   /*!< any text you like.    */  /* char descrip[80];    */
+    printf("aux_file:	%s\n",                   c2s(h->aux_file,24));  /*!< auxiliary filename.   */  /* char aux_file[24];   */
 
     printf("qform_code:	%i\n",                       h->qform_code );       /*!< NIFTI_XFORM_* code.   */  /*-- all ANALYZE 7.5 ---*/
     printf("sform_code:	%i\n",                       h->sform_code );       /*!< NIFTI_XFORM_* code.   */  /*   fields below here  */
@@ -1108,13 +1258,13 @@ void showNiiHeader(void)
     printf("qoffset_y:	%f\n",                       h->qoffset_y );        /*!< Quaternion y shift.   */
     printf("qoffset_z:	%f\n",                       h->qoffset_z );        /*!< Quaternion z shift.   */
 
-    printf("srow_x[4]:	%f,%f,%f,%f\n",              h->srow_x[0],h->srow_x[1],h->srow_x[2],h->srow_x[3] );        /*!< 1st row affine transform.   */
-    printf("srow_y[4]:	%f,%f,%f,%f\n",              h->srow_y[0],h->srow_y[1],h->srow_y[2],h->srow_y[3] );        /*!< 2nd row affine transform.   */
-    printf("srow_z[4]:	%f,%f,%f,%f\n",              h->srow_z[0],h->srow_z[1],h->srow_z[2],h->srow_z[3] );        /*!< 3rd row affine transform.   */
+    printf("srow_x:	%f,%f,%f,%f\n",              h->srow_x[0],h->srow_x[1],h->srow_x[2],h->srow_x[3] );        /*!< 1st row affine transform.   */
+    printf("srow_y:	%f,%f,%f,%f\n",              h->srow_y[0],h->srow_y[1],h->srow_y[2],h->srow_y[3] );        /*!< 2nd row affine transform.   */
+    printf("srow_z:	%f,%f,%f,%f\n",              h->srow_z[0],h->srow_z[1],h->srow_z[2],h->srow_z[3] );        /*!< 3rd row affine transform.   */
 
-    printf("intent_name[16]:	%s\n",               c2s(h->intent_name,16));   /*!< 'name' or meaning of data.  */
+    printf("intent_name:	%s\n",               c2s(h->intent_name,16));   /*!< 'name' or meaning of data.  */
 
-    printf("magic[4]:	%s\n",                       c2s(h->magic,4) );         /*!< MUST be "ni1\0" or "n+1\0". */
+    printf("magic:	%s\n",                       c2s(h->magic,4) );         /*!< MUST be "ni1\0" or "n+1\0". */
 }
 
 void setNiiHeader(char *var, char *val)
@@ -1208,6 +1358,164 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"magic")==0)
         strcpy(h->magic,val);
 }
+void createNiiHeader(char *txtpath, char *hdrpath)
+{
+    nifti_1_header *h;
+    FILE    *f;
+    char    str[512],var[512],val[512];
+    
+    h=(nifti_1_header *)calloc(1,sizeof(nifti_1_header));
+    
+    f=fopen(txtpath,"r");
+    while(!feof(f))
+    {
+        fgets(str,512,f);
+        sscanf(str," %s %s ",var,val);
+
+        if(strcmp(var,"sizeof_hdr")==0)
+            h->sizeof_hdr=(int)atoi(val);
+        else if(strcmp(var,"data_type")==0)
+            strcpy(h->data_type,val);
+        else if(strcmp(var,"db_name")==0)
+            strcpy(h->db_name,val);
+        else if(strcmp(var,"extents")==0)
+            h->extents=atoi(val);
+        else if(strcmp(var,"session_error")==0)
+            h->session_error=(short)atoi(val);
+        else if(strcmp(var,"regular")==0)
+            h->regular=val[0];
+        else if(strcmp(var,"dim_info")==0)
+            h->dim_info=val[0];
+        else if(strcmp(var,"dim")==0)
+            sscanf(val," %hi , %hi , %hi , %hi , %hi , %hi , %hi , %hi ",&(h->dim[0]),&(h->dim[1]),&(h->dim[2]),&(h->dim[3]),&(h->dim[4]),&(h->dim[5]),&(h->dim[6]),&(h->dim[7]));
+        else if(strcmp(var,"intent_p1")==0)
+            h->intent_p1=(short)atoi(val);
+        else if(strcmp(var,"intent_p2")==0)
+            h->intent_p2=(short)atoi(val);
+        else if(strcmp(var,"intent_p3")==0)
+            h->intent_p3=(short)atoi(val);
+        else if(strcmp(var,"intent_code")==0)
+            h->intent_code=(short)atoi(val);
+        else if(strcmp(var,"datatype")==0)
+            h->datatype=(short)atoi(val);
+        else if(strcmp(var,"bitpix")==0)
+            h->bitpix=(short)atoi(val);
+        else if(strcmp(var,"slice_start")==0)
+            h->slice_start=(short)atoi(val);
+        else if(strcmp(var,"pixdim")==0)
+            sscanf(val," %f , %f , %f , %f , %f , %f , %f , %f ",  &(h->pixdim[0]),&(h->pixdim[1]),&(h->pixdim[2]),&(h->pixdim[3]),&(h->pixdim[4]),&(h->pixdim[5]),&(h->pixdim[6]),&(h->pixdim[7]));
+        else if(strcmp(var,"vox_offset")==0)
+            h->vox_offset=(float)atof(val);
+        else if(strcmp(var,"scl_slope")==0)
+            h->scl_slope=(float)atof(val);
+        else if(strcmp(var,"scl_inter")==0)
+            h->scl_inter=(float)atof(val);
+        else if(strcmp(var,"slice_end")==0)
+            h->slice_end=(float)atof(val);
+        else if(strcmp(var,"slice_code")==0)
+            h->slice_code=val[0];
+        else if(strcmp(var,"xyzt_units")==0)
+            h->xyzt_units=val[0];
+        else if(strcmp(var,"cal_max")==0)
+            h->cal_max=(float)atof(val);
+        else if(strcmp(var,"cal_min")==0)
+            h->cal_min=(float)atof(val);
+        else if(strcmp(var,"slice_duration")==0)
+            h->slice_duration=(float)atof(val);
+        else if(strcmp(var,"toffset")==0)
+            h->toffset=(float)atof(val);
+        else if(strcmp(var,"glmax")==0)
+            h->glmax=(int)atoi(val);
+        else if(strcmp(var,"glmin")==0)
+            h->glmin=(int)atoi(val);
+        else if(strcmp(var,"descrip")==0)
+            strcpy(h->descrip,val);
+        else if(strcmp(var,"aux_file[24]")==0)
+            strcpy(h->aux_file,val);
+        else if(strcmp(var,"qform_code")==0)
+            h->qform_code=(short)atoi(val);
+        else if(strcmp(var,"sform_code")==0)
+            h->sform_code=(short)atoi(val);
+        else if(strcmp(var,"quatern_b")==0)
+            h->quatern_b=(float)atof(val);
+        else if(strcmp(var,"quatern_c")==0)
+            h->quatern_c=(float)atof(val);
+        else if(strcmp(var,"quatern_d")==0)
+            h->quatern_d=(float)atof(val);
+        else if(strcmp(var,"qoffset_x")==0)
+            h->qoffset_x=(float)atof(val);
+        else if(strcmp(var,"qoffset_y")==0)
+            h->qoffset_y=(float)atof(val);
+        else if(strcmp(var,"qoffset_z")==0)
+            h->qoffset_z=(float)atof(val);
+        else if(strcmp(var,"srow_x")==0)
+            sscanf(val," %f , %f , %f , %f ", &(h->srow_x[0]),&(h->srow_x[1]),&(h->srow_x[2]),&(h->srow_x[3]) );
+        else if(strcmp(var,"srow_y")==0)
+            sscanf(val," %f , %f , %f , %f ", &(h->srow_y[0]),&(h->srow_y[1]),&(h->srow_y[2]),&(h->srow_y[3]) );
+        else if(strcmp(var,"srow_z")==0)
+            sscanf(val," %f , %f , %f , %f ", &(h->srow_z[0]),&(h->srow_z[1]),&(h->srow_z[2]),&(h->srow_z[3]) );
+        else if(strcmp(var,"intent_name")==0)
+            strcpy(h->intent_name,val);
+        else if(strcmp(var,"magic")==0)
+            strcpy(h->magic,val);
+    }
+    fclose(f);
+    
+    f=fopen(hdrpath,"w");
+    fwrite(h,1,sizeof(nifti_1_header),f);
+    fclose(f);
+    
+    free(h);
+}
+/**
+ * @desc creates a new 'short' nifti1 volume
+ */
+void newNiiVolume(int dx, int dy, int dz, float px, float py, float pz, float ox, float oy, float oz)
+{
+    int sz;
+    char *addr;
+    nifti_1_header *h;
+
+    sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
+    addr=calloc(sz,1);
+
+    hdr=(AnalyzeHeader*)addr;
+    img=(char*)(addr+sizeof(nifti_1_header));
+    h=(nifti_1_header*)hdr;
+
+    h->sizeof_hdr=348;
+    h->dim[0]=3;
+    h->dim[1]=dx;
+    h->dim[2]=dy;
+    h->dim[3]=dz;
+    h->datatype=DT_INT16;
+    h->pixdim[0]=-1;
+    h->pixdim[1]=px;
+    h->pixdim[2]=py;
+    h->pixdim[3]=pz;
+    h->vox_offset=352;
+    h->scl_slope=1;
+    h->scl_inter=0;
+    h->xyzt_units=NIFTI_UNITS_MM;
+    strcpy(h->descrip,"volume, by volume");
+    h->qform_code=0;
+    h->sform_code=1;
+    h->quatern_b=1;
+    h->qoffset_x=ox;
+    h->qoffset_y=oy;
+    h->qoffset_z=oz;
+    h->srow_x[0]=px;
+    h->srow_x[3]=ox;
+    h->srow_y[1]=py;
+    h->srow_y[3]=oy;
+    h->srow_z[2]=pz;
+    h->srow_z[3]=oz;
+    strcpy(h->magic,"n+1");
+
+    dim[0]=hdr->dim[1];
+    dim[1]=hdr->dim[2];
+    dim[2]=hdr->dim[3];
+}
 void zigzag(void)
 {
     int m,n=0;
@@ -1251,6 +1559,339 @@ void zigzag(void)
     }
     printf("\n");
 }
+void readTxtMesh(char *path, Mesh *m)
+{
+    FILE    *f;
+    char    str[1024];
+    int     np,nt,i;
+    
+    f=fopen(path,"r");
+    fgets(str,1024,f);
+    sscanf(str," %i %i ",&np, &nt);
+    m->np=np;
+    m->nt=nt;
+    m->p=(float3D*)calloc(np,sizeof(float3D));
+    m->t=(int3D*)calloc(nt,sizeof(int3D));
+    for(i=0;i<np;i++)
+    {
+        fgets(str,1024,f);
+        sscanf(str," %f %f %f ",&((m->p)[i].x),&((m->p)[i].y),&((m->p)[i].z));
+    }
+    for(i=0;i<nt;i++)
+    {
+        fgets(str,1024,f);
+        sscanf(str," %i %i %i ",&((m->t)[i].a),&((m->t)[i].b),&((m->t)[i].c));
+    }
+}
+void readPlyMesh(char *path, Mesh *m)
+{
+    int     *np=&(m->np);
+    int     *nt=&(m->nt);
+    float3D **p=&(m->p);
+    int3D   **t=&(m->t);
+    FILE    *f;
+    int     i,x;
+    char    str[512],str1[256],str2[256];
+        
+    f=fopen(path,"r");
+    if(f==NULL){printf("ERROR: Cannot open file\n");return;}
+
+    // READ HEADER
+    *np=*nt=0;
+    do
+    {
+        fgets(str,511,f);
+        sscanf(str," %s %s %i ",str1,str2,&x);
+        if(strcmp(str1,"element")==0&&strcmp(str2,"vertex")==0)
+            *np=x;
+        else
+        if(strcmp(str1,"element")==0&&strcmp(str2,"face")==0)
+            *nt=x;
+    }
+    while(strcmp(str1,"end_header")!=0 && !feof(f));
+    if((*np)*(*nt)==0)
+    {
+        printf("ERROR: Bad Ply file header format\n");
+        return;
+    }
+    // READ VERTICES
+    *p = (float3D*)calloc(*np,sizeof(float3D));
+    if(*p==NULL){printf("ERROR: Not enough memory for mesh vertices\n");return;}
+    for(i=0;i<*np;i++)
+        fscanf(f," %f %f %f ",&((*p)[i].x),&((*p)[i].y),&((*p)[i].z));    
+    if(verbose)
+        printf("Read %i vertices\n",*np);
+
+    // READ TRIANGLES
+    *t = (int3D*)calloc(*nt,sizeof(int3D));
+    if(*t==NULL){printf("ERROR: Not enough memory for mesh triangles\n"); return;}
+    for(i=0;i<*nt;i++)
+        fscanf(f," 3 %i %i %i ",&((*t)[i].a),&((*t)[i].b),&((*t)[i].c));
+    if(verbose)
+        printf("Read %i triangles\n",*nt);
+
+    fclose(f);
+}
+void readMesh(char *path, Mesh *m)
+{
+    int     i;
+    char    *extension;
+    
+    for(i=strlen(path);i>=0;i--)
+        if(path[i]=='.')
+            break;
+    if(i==0)
+    {
+        printf("ERROR: Unable to find the format extension\n");
+        return;
+    }
+    extension=path+i+1;
+    
+    if(strcmp(extension,"txt")==0)
+        readTxtMesh(path,m);
+    else
+    if(strcmp(extension,"ply")==0)
+        readPlyMesh(path,m);
+    else
+    {
+        printf("ERROR: Unknown mesh format\n");
+        return;
+    }
+}
+float dot3D(float3D a, float3D b)
+{
+    return (float){a.x*b.x+a.y*b.y+a.z*b.z};
+}
+float3D cross3D(float3D a, float3D b)
+{
+    return (float3D){a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x};
+}
+float3D sub3D(float3D a, float3D b)
+{
+    return (float3D){a.x-b.x,a.y-b.y,a.z-b.z};
+}
+// Akenine-Möller triangle/box intersection, fixed by Nick Pelling
+// Code adapted from from http://www.cs.lth.se/home/Tomas_Akenine_Moller/code/
+#define FINDMINMAX(x0,x1,x2,min,max)min=max=x0;if(x1<min) min=x1;if(x1>max) max=x1;if(x2<min) min=x2;if(x2>max) max=x2;
+int planeBoxOverlap(float *nor,float *vert, float *maxbox)
+{
+    int		q;
+    float	vmin[3],vmax[3];
+    
+    for(q=0;q<3;q++)
+    if(nor[q]>0.0f)
+    {
+        vmin[q]=-maxbox[q]-vert[q];
+        vmax[q]=maxbox[q]-vert[q];
+    }
+    else
+    {
+        vmin[q]=maxbox[q]-vert[q];
+        vmax[q]=-maxbox[q]-vert[q];
+    }
+    if(dot3D(*(float3D*)nor,*(float3D*)vmin)>0.0f) return 0;
+    if(dot3D(*(float3D*)nor,*(float3D*)vmax)>=0.0f)return 1;
+    return 0;
+}
+#define AXISTEST_X01(a,b,fa,fb)	p0= a*v0.y-b*v0.z;p2= a*v2.y-b*v2.z;if(p0<p2){min=p0;max=p2;}else{min=p2;max=p0;}rad=fa*boxhalfsize.y+fb*boxhalfsize.z;if(min>rad||max<-rad)return 0;
+#define AXISTEST_X2(a,b,fa,fb)	p0= a*v0.y-b*v0.z;p1= a*v1.y-b*v1.z;if(p0<p1){min=p0;max=p1;}else{min=p1;max=p0;}rad=fa*boxhalfsize.y+fb*boxhalfsize.z;if(min>rad||max<-rad)return 0;
+#define AXISTEST_Y02(a,b,fa,fb)	p0=-a*v0.x+b*v0.z;p2=-a*v2.x+b*v2.z;if(p0<p2){min=p0;max=p2;}else{min=p2;max=p0;}rad=fa*boxhalfsize.x+fb*boxhalfsize.z;if(min>rad||max<-rad)return 0;
+#define AXISTEST_Y1(a,b,fa,fb)	p0=-a*v0.x+b*v0.z;p1=-a*v1.x+b*v1.z;if(p0<p1){min=p0;max=p1;}else{min=p1;max=p0;}rad=fa*boxhalfsize.x+fb*boxhalfsize.z;if(min>rad||max<-rad)return 0;
+#define AXISTEST_Z12(a,b,fa,fb)	p1= a*v1.x-b*v1.y;p2= a*v2.x-b*v2.y;if(p2<p1){min=p2;max=p1;}else{min=p1;max=p2;}rad=fa*boxhalfsize.x+fb*boxhalfsize.y;if(min>rad||max<-rad)return 0;
+#define AXISTEST_Z0(a,b,fa,fb)	p0= a*v0.x-b*v0.y;p1= a*v1.x-b*v1.y;if(p0<p1){min=p0;max=p1;}else{min=p1;max=p0;}rad=fa*boxhalfsize.x+fb*boxhalfsize.y;if(min>rad||max<-rad)return 0;
+int triBoxOverlap(float3D boxcenter,int	i,Mesh *mesh)
+{
+    float3D *p=mesh->p;
+    int3D *t=mesh->t;
+    float3D	boxhalfsize={0.5,0.5,0.5};
+    float3D	v0,v1,v2;
+    float	min,max,p0,p1,p2,rad,fex,fey,fez;
+    float3D	nor,e0,e1,e2;
+    
+    v0=sub3D(p[t[i].a],boxcenter);
+    v1=sub3D(p[t[i].b],boxcenter);
+    v2=sub3D(p[t[i].c],boxcenter);
+    
+    e0=sub3D(v1,v0);      // tri edge 0
+    e1=sub3D(v2,v1);      // tri edge 1
+    e2=sub3D(v0,v2);      // tri edge 2
+    
+    fex = fabs(e0.x);
+    fey = fabs(e0.y);
+    fez = fabs(e0.z);
+    AXISTEST_X01(e0.z, e0.y, fez, fey);
+    AXISTEST_Y02(e0.z, e0.x, fez, fex);
+    AXISTEST_Z12(e0.y, e0.x, fey, fex);
+    
+    fex = fabs(e1.x);
+    fey = fabs(e1.y);
+    fez = fabs(e1.z);
+    AXISTEST_X01(e1.z, e1.y, fez, fey);
+    AXISTEST_Y02(e1.z, e1.x, fez, fex);
+    AXISTEST_Z0(e1.y, e1.x, fey, fex);
+    
+    fex = fabs(e2.x);
+    fey = fabs(e2.y);
+    fez = fabs(e2.z);
+    AXISTEST_X2(e2.z, e2.y, fez, fey);
+    AXISTEST_Y1(e2.z, e2.x, fez, fex);
+    AXISTEST_Z12(e2.y, e2.x, fey, fex);
+    
+    // test in X-direction
+    FINDMINMAX(v0.x,v1.x,v2.x,min,max);
+    if(min>boxhalfsize.x || max<-boxhalfsize.x) return 0;
+    
+    // test in Y-direction
+    FINDMINMAX(v0.y,v1.y,v2.y,min,max);
+    if(min>boxhalfsize.y || max<-boxhalfsize.y) return 0;
+    
+    // test in Z-direction
+    FINDMINMAX(v0.z,v1.z,v2.z,min,max);
+    if(min>boxhalfsize.z || max<-boxhalfsize.z) return 0;
+    
+    nor=cross3D(e0,e1);
+    if(!planeBoxOverlap((float*)&nor,(float*)&v0,(float*)&boxhalfsize))
+        return 0;
+    
+    return 1;   // box and triangle overlaps
+}
+float Min(float x, float y)
+{
+    return (x<y)?x:y;
+}
+float Max(float x, float y)
+{
+    return (x>y)?x:y;
+}
+void resize(int dx, int dy, int dz)
+{
+    long          sz;
+    int           i,j,k;
+    int           oi,oj,ok;
+    char          *addr;
+    AnalyzeHeader *theHdr;
+    char          *theImg;
+    float         val;
+
+    switch(hdr->datatype)
+    {
+        case UCHAR:
+            sz=dx*dy*dz*sizeof(char)+sizeof(nifti_1_header);
+            break;
+        case SHORT:
+            sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
+            break;
+        case INT:
+            sz=dx*dy*dz*sizeof(int)+sizeof(nifti_1_header);
+            break;
+        case FLOAT:
+            sz=dx*dy*dz*sizeof(float)+sizeof(nifti_1_header);
+            break;
+    }
+    addr=calloc(sz,1);
+    memcpy(addr, (char*)hdr, sizeof(nifti_1_header));
+    theHdr=(AnalyzeHeader*)addr;
+    theImg=(char*)(addr+sizeof(nifti_1_header));
+    theHdr->dim[1]=dx;
+    theHdr->dim[2]=dy;
+    theHdr->dim[3]=dz;
+
+    // offsets
+    oi=(dx-dim[0])/2;
+    oj=(dx-dim[1])/2;
+    ok=(dx-dim[2])/2;
+
+    // get data from original volume, copy it into new volume
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        val=getValue(i,j,k);
+        setValue2(val,(k+ok)*dy*dx+(j+oj)*dx+(i+oi),theHdr,theImg);
+    }
+
+    // update reference data
+    dim[0]=dx;
+    dim[1]=dy;
+    dim[2]=dz;
+    free((char*)hdr);
+    hdr=theHdr;
+    img=theImg;
+}
+void strokeMesh(char *path)
+{
+    int     i,j,k,l;
+    int     np,nt;
+    float3D *p;
+    int3D   *t;
+    float   *pixdim;
+    float3D mi,ma;
+    Mesh    mesh;
+    float   mx;
+    nifti_1_header   *h;
+    
+    h=(nifti_1_header*)hdr;
+    pixdim=&(h->pixdim[1]);
+    
+    mx=max();
+    
+    readMesh(path,&mesh);
+    np=mesh.np;
+    nt=mesh.nt;
+    p=mesh.p;
+    t=mesh.t;
+    
+    // find min, max, compute mesh center as (min+max)/2
+    /*
+    float3D min,max,cen,sz;
+    min=max=p[0];
+    for(i=0;i<np;i++)
+    {
+        if(min.x>p[i].x) min.x=p[i].x;
+        if(min.y>p[i].y) min.x=p[i].y;
+        if(min.z>p[i].z) min.x=p[i].z;
+        if(max.x<p[i].x) max.x=p[i].x;
+        if(max.y<p[i].y) max.y=p[i].y;
+        if(max.z<p[i].z) max.z=p[i].z;
+    }
+    cen.x=(min.x+max.x)/2.0;
+    cen.y=(min.y+max.y)/2.0;
+    cen.z=(min.z+max.z)/2.0;
+    sz.x=max.x-min.x;
+    sz.y=max.y-min.y;
+    sz.z=max.z-min.z;
+    */
+    
+    // transform vertex coordinates to voxel indices
+    printf("offset: %f, %f, %f\n",h->srow_x[3],h->srow_y[3],h->srow_z[3]);
+    printf("pixdim: %f, %f, %f\n",pixdim[0],pixdim[1],pixdim[2]);
+    for(i=0;i<np;i++)
+    {
+        p[i].x=(p[i].x-h->srow_x[3])/pixdim[0];
+        p[i].y=(p[i].y-h->srow_y[3])/pixdim[1];
+        p[i].z=(p[i].z-h->srow_z[3])/pixdim[2];
+    }
+    
+    // scan triangles
+    for(l=0;l<nt;l++)
+    {
+        mi.x=Min(Min(p[t[l].a].x,p[t[l].b].x),p[t[l].c].x);
+        mi.y=Min(Min(p[t[l].a].y,p[t[l].b].y),p[t[l].c].y);
+        mi.z=Min(Min(p[t[l].a].z,p[t[l].b].z),p[t[l].c].z);
+        ma.x=Max(Max(p[t[l].a].x,p[t[l].b].x),p[t[l].c].x)+0.5;
+        ma.y=Max(Max(p[t[l].a].y,p[t[l].b].y),p[t[l].c].y)+0.5;
+        ma.z=Max(Max(p[t[l].a].z,p[t[l].b].z),p[t[l].c].z)+0.5;
+        for(i=mi.x;i<=ma.x;i++)
+        for(j=mi.y;j<=ma.y;j++)
+        for(k=mi.z;k<=ma.z;k++)
+        {
+            if(!triBoxOverlap((float3D){i+0.5,j+0.5,k+0.5},l,&mesh))
+                continue;
+            setValue(mx+1,i,j,k);
+        }
+    }
+}
+/*
 void strokeMesh(char *path)
 {
     FILE    *f;
@@ -1278,6 +1919,8 @@ void strokeMesh(char *path)
         setValue(mx+1,(int)(x+0.5),(int)(y+0.5),(int)(z+0.5));
     }
 }
+*/
+
 
 int cube_edges[24];
 int edge_table[256];
@@ -1330,84 +1973,84 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
     {
         int m = 1 + (dim[0]+1) * (1 + buf_no * (dim[1]+1));
         for(x[1]=0; x[1]<dim[1]-1; ++x[1], ++n, m+=2)
-            for(x[0]=0; x[0]<dim[0]-1; ++x[0], ++n, ++m)
+        for(x[0]=0; x[0]<dim[0]-1; ++x[0], ++n, ++m)
+        {
+            int mask = 0, g = 0, idx = n;
+            for(k=0; k<2; ++k, idx += dim[0]*(dim[1]-2))
+            for(j=0; j<2; ++j, idx += dim[0]-2)
+            for(i=0; i<2; ++i, ++g, ++idx)
             {
-                int mask = 0, g = 0, idx = n;
-                for(k=0; k<2; ++k, idx += dim[0]*(dim[1]-2))
-                    for(j=0; j<2; ++j, idx += dim[0]-2)
-                        for(i=0; i<2; ++i, ++g, ++idx)
-                        {
-                            float p = getValue1(idx)-level;
-                            grid[g] = p;
-                            mask |= (p < 0) ? (1<<g) : 0;
-                        }
-                if(mask == 0 || mask == 0xff)
+                float p = getValue1(idx)-level;
+                grid[g] = p;
+                mask |= (p < 0) ? (1<<g) : 0;
+            }
+            if(mask == 0 || mask == 0xff)
+                continue;
+            int edge_mask = edge_table[mask];
+            float3D v = {0.0,0.0,0.0};
+            int e_count = 0;
+            for(i=0; i<12; ++i)
+            {
+                if(!(edge_mask & (1<<i)))
                     continue;
-                int edge_mask = edge_table[mask];
-                float3D v = {0.0,0.0,0.0};
-                int e_count = 0;
-                for(i=0; i<12; ++i)
-                {
-                    if(!(edge_mask & (1<<i)))
-                        continue;
-                    ++e_count;
-                    int e0 = cube_edges[ i<<1 ];       //Unpack vertices
-                    int e1 = cube_edges[(i<<1)+1];
-                    float g0 = grid[e0];                 //Unpack grid values
-                    float g1 = grid[e1];
-                    float t  = g0 - g1;                  //Compute point of intersection
-                    if(fabs(t) > 1e-6)
-                        t = g0 / t;
-                    else
-                        continue;
-                    k=1;
-                    for(j=0; j<3; ++j)
-                    {
-                        int a = e0 & k;
-                        int b = e1 & k;
-                        if(a != b)
-                            ((float*)&v)[j] += a ? 1.0 - t : t;
-                        else
-                            ((float*)&v)[j] += a ? 1.0 : 0;
-                        k=k<<1;
-                    }
-                }
-                float s = 1.0 / e_count;
-                for(i=0; i<3; ++i)
-                    ((float*)&v)[i] = x[i] + s * ((float*)&v)[i];
-                buffer[m] = vertices_length;
-                if(storeFlag)
-                    vertices[vertices_length++]=v;
+                ++e_count;
+                int e0 = cube_edges[ i<<1 ];       //Unpack vertices
+                int e1 = cube_edges[(i<<1)+1];
+                float g0 = grid[e0];                 //Unpack grid values
+                float g1 = grid[e1];
+                float t  = g0 - g1;                  //Compute point of intersection
+                if(fabs(t) > 1e-6)
+                    t = g0 / t;
                 else
-                    vertices_length++;
-                for(i=0; i<3; ++i)
+                    continue;
+                k=1;
+                for(j=0; j<3; ++j)
                 {
-                    if(!(edge_mask & (1<<i)) )
-                        continue;
-                    int iu = (i+1)%3;
-                    int iv = (i+2)%3;
-                    if(x[iu] == 0 || x[iv] == 0)
-                        continue;
-                    int du = R[iu];
-                    int dv = R[iv];
-                    
-                    if(storeFlag)
-                    {
-                        if(mask & 1)
-                        {
-                            faces[faces_length++]=(int3D){buffer[m], buffer[m-du-dv], buffer[m-du]};
-                            faces[faces_length++]=(int3D){buffer[m], buffer[m-dv], buffer[m-du-dv]};
-                        }
-                        else
-                        {
-                            faces[faces_length++]=(int3D){buffer[m], buffer[m-du-dv], buffer[m-dv]};
-                            faces[faces_length++]=(int3D){buffer[m], buffer[m-du], buffer[m-du-dv]};
-                        }
-                    }
+                    int a = e0 & k;
+                    int b = e1 & k;
+                    if(a != b)
+                        ((float*)&v)[j] += a ? 1.0 - t : t;
                     else
-                        faces_length+=2;
+                        ((float*)&v)[j] += a ? 1.0 : 0;
+                    k=k<<1;
                 }
             }
+            float s = 1.0 / e_count;
+            for(i=0; i<3; ++i)
+                ((float*)&v)[i] = x[i] + s * ((float*)&v)[i];
+            buffer[m] = vertices_length;
+            if(storeFlag)
+                vertices[vertices_length++]=v;
+            else
+                vertices_length++;
+            for(i=0; i<3; ++i)
+            {
+                if(!(edge_mask & (1<<i)) )
+                    continue;
+                int iu = (i+1)%3;
+                int iv = (i+2)%3;
+                if(x[iu] == 0 || x[iv] == 0)
+                    continue;
+                int du = R[iu];
+                int dv = R[iv];
+                
+                if(storeFlag)
+                {
+                    if(mask & 1)
+                    {
+                        faces[faces_length++]=(int3D){buffer[m], buffer[m-du-dv], buffer[m-du]};
+                        faces[faces_length++]=(int3D){buffer[m], buffer[m-dv], buffer[m-du-dv]};
+                    }
+                    else
+                    {
+                        faces[faces_length++]=(int3D){buffer[m], buffer[m-du-dv], buffer[m-dv]};
+                        faces[faces_length++]=(int3D){buffer[m], buffer[m-du], buffer[m-du-dv]};
+                    }
+                }
+                else
+                    faces_length+=2;
+            }
+        }
         n+=dim[0];
         buf_no ^= 1;
         R[2]=-R[2];
@@ -1451,8 +2094,8 @@ void sampleMesh(char *mesh,char *result)
 #pragma mark [ Format conversion ]
 int getformatindex(char *path)
 {
-    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt"};
-    int     i,n=6; // number of recognised formats
+    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt","inr"};
+    int     i,n=sizeof(formats)/sizeof(long); // number of recognised formats
     int     found,index;
     char    *extension;
     
@@ -1509,12 +2152,19 @@ int getformatindex(char *path)
             printf("Format: Schematic volume\n");
     }
     else
-        if(i==6)
-        {
-            index=kTextVolume;
-            if(verbose)
-                printf("Format: Text volume\n");
-        }
+    if(i==6)
+    {
+        index=kTextVolume;
+        if(verbose)
+            printf("Format: Text volume\n");
+    }
+    else
+    if(i==7)
+    {
+        index=kINRIMAGEVolume;
+        if(verbose)
+            printf("Format: INRIMAGE volume\n");
+    }
     else
 	{
 		printf("ERROR: unrecognized format \"%s\"\n",extension);
@@ -1523,7 +2173,7 @@ int getformatindex(char *path)
 	
     return index;
 }
-int loadVolume_Analyze(char *path)
+int loadVolume_Analyze(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
 	int		i,sz;
 	int		swapped;
@@ -1540,14 +2190,14 @@ int loadVolume_Analyze(char *path)
 	sprintf(path,"%s.hdr",base);
 	printf("Loading hdr at %s\n",path);
 	Analyze_load(path,&addr,&sz,&swapped);
-	hdr=(AnalyzeHeader*)addr;
-	img=(char*)(addr+sizeof(AnalyzeHeader));
-	dim[0]=hdr->dim[1];
-	dim[1]=hdr->dim[2];
-	dim[2]=hdr->dim[3];
-	voxdim[0]=hdr->pixdim[1];
-	voxdim[1]=hdr->pixdim[2];
-	voxdim[2]=hdr->pixdim[3];
+	*theHdr=(AnalyzeHeader*)addr;
+	*theImg=(char*)(addr+sizeof(AnalyzeHeader));
+	dim[0]=(*theHdr)->dim[1];
+	dim[1]=(*theHdr)->dim[2];
+	dim[2]=(*theHdr)->dim[3];
+	voxdim[0]=(*theHdr)->pixdim[1];
+	voxdim[1]=(*theHdr)->pixdim[2];
+	voxdim[2]=(*theHdr)->pixdim[3];
     
 	return 0;
 }
@@ -1572,17 +2222,17 @@ int saveVolume_Analyze(char *path)
 	
 	return 0;
 }
-int loadVolume_MGZ(char *path)
+int loadVolume_MGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
     char	*addr;
     int		sz;
     
     MGH_load_GZ(path,&addr,&sz);
-    hdr=(AnalyzeHeader*)addr;
-    img=(char*)(addr+sizeof(AnalyzeHeader));
-    dim[0]=hdr->dim[1];
-    dim[1]=hdr->dim[2];
-    dim[2]=hdr->dim[3];
+    (*theHdr)=(AnalyzeHeader*)addr;
+    (*theImg)=(char*)(addr+sizeof(AnalyzeHeader));
+    dim[0]=(*theHdr)->dim[1];
+    dim[1]=(*theHdr)->dim[2];
+    dim[2]=(*theHdr)->dim[3];
     
     return 0;
 }
@@ -1591,7 +2241,7 @@ int saveVolume_MGZ(char *path)
     printf("Can't save MGZ yet...\n");
     return 0;
 }
-int loadVolume_Nifti(char *path)
+int loadVolume_Nifti(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
     char	*addr;
     int		sz;
@@ -1599,12 +2249,14 @@ int loadVolume_Nifti(char *path)
     
     // load data
     Nifti_load(path,g_selectedVolume,&addr,&sz,&swapped);
-    hdr=(AnalyzeHeader*)addr;
-    img=(char*)(addr+sizeof(AnalyzeHeader));
-    dim[0]=hdr->dim[1];
-    dim[1]=hdr->dim[2];
-    dim[2]=hdr->dim[3];
-    dim[3]=hdr->dim[4]=1; // one single volume is selected
+    (*theHdr)=(AnalyzeHeader*)addr;
+    (*theImg)=(char*)(addr+sizeof(AnalyzeHeader));
+    dim[0]=(*theHdr)->dim[1];
+    dim[1]=(*theHdr)->dim[2];
+    dim[2]=(*theHdr)->dim[3];
+    if((*theHdr)->dim[4]!=1)
+        printf("WARNING: the 4th dimension of this volume has been reconfigured to 1\n");
+    dim[3]=(*theHdr)->dim[4]=1; // one single volume is selected
     return 0;
 }
 int saveVolume_Nifti(char *path)
@@ -1615,9 +2267,9 @@ int saveVolume_Nifti(char *path)
     
     return 0;
 }
-int loadVolume_NiftiGZ(char *path)
+int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
-    FILE *f;
+    int  result;
     char filename[4096]={0};
     char cmd[4096];
 
@@ -1625,8 +2277,8 @@ int loadVolume_NiftiGZ(char *path)
     if(getenv("TEMP")==NULL) strcat(filename,"/tmp");
     else                     strcat(filename,getenv("TEMP"));
     strcat(filename,"/nii.XXXXXX");
-    f=mkstemp(filename);
-    if((int)f==-1)
+    result=mkstemp(filename);
+    if(result==-1)
     {
         printf("Cannot create temporary file.\n");
         return 1;
@@ -1639,7 +2291,7 @@ int loadVolume_NiftiGZ(char *path)
     system(cmd);
     
     // load temporary file
-    loadVolume_Nifti(filename);
+    loadVolume_Nifti(filename, theHdr, theImg);
 
     // clean up
     sprintf(cmd,"/bin/rm -r %s",filename);
@@ -1656,6 +2308,45 @@ int saveVolume_NiftiGZ(char *path)
     
     sprintf(cmd,"/usr/bin/gzip -f %s;/bin/mv %s.gz %s",path,path,path);
     system(cmd);
+
+    return 0;
+}
+int saveVolume_INRIMAGE(char *path)
+{
+    char    *header;
+    float   *buff;
+    FILE    *f;
+    int     i,sz;
+    
+    header=calloc(256,sizeof(char));
+    for(i=0;i<256;i++)
+        header[i]='\n';
+    i=sprintf(header,"#INRIMAGE-4#{\nXDIM=%i\nYDIM=%i\nZDIM=%i\nVDIM=1\nTYPE=float\nPIXSIZE=32 bits\nCPU=pc\nVX=%f\nVY=%f\nVZ=%f",
+        hdr->dim[1],
+        hdr->dim[2],
+        hdr->dim[3],
+        hdr->pixdim[1],
+        hdr->pixdim[2],
+        hdr->pixdim[3]
+    );
+    header[i]='\n';
+    header[252]='#';
+    header[253]='#';
+    header[254]='}';
+    header[255]='\n';
+    
+    sz=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
+    buff=(float*)calloc(sz,sizeof(float));
+    for(i=0;i<sz;i++)
+        buff[i]=getValue1(i);
+    
+    f=fopen(path,"w");
+    fwrite(header,256,sizeof(char),f);
+    fwrite(buff,sz,sizeof(float),f);
+    fclose(f);
+    
+    free(header);
+    free(buff);
 
     return 0;
 }
@@ -1787,7 +2478,7 @@ int saveVolume_Schematic(char *path)
 
     return 0;
 }
-int loadVolume(char *path)
+int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
 	int	err,format;
 	
@@ -1796,16 +2487,20 @@ int loadVolume(char *path)
 	switch(format)
 	{
 		case kAnalyzeVolume:
-			err=loadVolume_Analyze(path);
+			err=loadVolume_Analyze(path,theHdr,theImg);
 			break;
         case kMGZVolume:
-            err=loadVolume_MGZ(path);
+            err=loadVolume_MGZ(path,theHdr,theImg);
             break;
         case kNiftiVolume:
-            err=loadVolume_Nifti(path);
+            err=loadVolume_Nifti(path,theHdr,theImg);
             break;
         case kNiftiGZVolume:
-            err=loadVolume_NiftiGZ(path);
+            err=loadVolume_NiftiGZ(path,theHdr,theImg);
+            break;
+        case kINRIMAGEVolume:
+            err=1;
+            printf("ERROR: Cannot read INRIMAGE volume yet...");
             break;
         case kSchematicVolume:
             err=1;
@@ -1843,11 +2538,13 @@ int saveVolume(char *path)
         case kNiftiGZVolume:
             saveVolume_NiftiGZ(path);
             break;
+        case kINRIMAGEVolume:
+            saveVolume_INRIMAGE(path);
+            break;
         case kSchematicVolume:
             saveVolume_Schematic(path);
             break;
         case kTextVolume:
-            //saveVolume_Schematic(path);
             printf("ERROR: Cannot save text volume without mask yet...");
             break;
 		default:
@@ -1862,54 +2559,22 @@ int saveMaskedVolume_Text(char *path, char *maskpath){
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
     int				mask_dim[4];
-    float           mask_voxdim[4];
-    AnalyzeHeader	*tmp_hdr;
-    char			*tmp_img;
-    int				*tmp_dim;
-    float           *tmp_voxdim;
-    int             *tmp_g_selectedVolume;
+    int				i, j, k;
     
-    tmp_hdr=hdr;        //save data from -i temporarely
-    tmp_img=img;
-    tmp_dim=dim;
-    tmp_voxdim=voxdim;
-    tmp_g_selectedVolume=g_selectedVolume;
-    
-    g_selectedVolume=0;
-    
-    loadVolume(maskpath);       //load mask in the global variables
-    mask_hdr=hdr;           //copy global variables in local variables
-    mask_img=img;
-    mask_dim[0]=dim[0];
-    mask_dim[1]=dim[1];
-    mask_dim[2]=dim[2];
-    mask_dim[3]=dim[3];
-    mask_voxdim[0]=voxdim[0];
-    mask_voxdim[1]=voxdim[1];
-    mask_voxdim[2]=voxdim[2];
-    mask_voxdim[3]=voxdim[3];
+    loadVolume(maskpath,&mask_hdr,&mask_img);
+    mask_dim[0]=mask_hdr->dim[1];
+    mask_dim[1]=mask_hdr->dim[2];
+    mask_dim[2]=mask_hdr->dim[3];
     
     printf("mask: min:%f max:%f \n",min(),max());
-    
-    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
-    img=tmp_img;
-    dim[0]=tmp_dim[0];
-    dim[1]=tmp_dim[1];
-    dim[2]=tmp_dim[2];
-    dim[3]=tmp_dim[3];
-    voxdim[0]=tmp_voxdim[0];
-    voxdim[1]=tmp_voxdim[1];
-    voxdim[2]=tmp_voxdim[2];
-    voxdim[3]=tmp_voxdim[3];
-    g_selectedVolume=tmp_g_selectedVolume;
     
     FILE *f = fopen(path, "w");
     
     printf("volume: min:%f max:%f \n",min(),max());
     
-    for(int i=0;i<dim[0];i++)
-		for(int j=0;j<dim[1];j++)
-			for(int k=0;k<dim[2];k++){
+    for(i=0;i<dim[0];i++)
+		for(j=0;j<dim[1];j++)
+			for(k=0;k<dim[2];k++){
                 int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
                 if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
                     fprintf(f, "%f ",getValue(i, j, k));
@@ -1958,15 +2623,7 @@ void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
 {
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
-    int				mask_dim[4];
-    float           mask_voxdim[4];
-    AnalyzeHeader	*tmp_hdr;
-    char			*tmp_img;
-    int				*tmp_dim;
-    float           *tmp_voxdim;
-    int             *tmp_g_selectedVolume;
-    
-    
+    int				mask_dim[4];    
     
     char filepath_x[1000];
     strcpy(filepath_x, path);
@@ -1987,40 +2644,10 @@ void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
         exit(1);
     }
     
-    tmp_hdr=hdr;        //save data from -i temporarely
-    tmp_img=img;
-    tmp_dim=dim;
-    tmp_voxdim=voxdim;
-    tmp_g_selectedVolume=g_selectedVolume;
-    
-    g_selectedVolume=0;
-    loadVolume(path);       //load mask in the global variables
-    mask_hdr=hdr;           //copy global variables in local variables
-    mask_img=img;
-    mask_dim[0]=dim[0];
-    mask_dim[1]=dim[1];
-    mask_dim[2]=dim[2];
-    mask_dim[3]=dim[3];
-    mask_voxdim[0]=voxdim[0];
-    mask_voxdim[1]=voxdim[1];
-    mask_voxdim[2]=voxdim[2];
-    mask_voxdim[3]=voxdim[3];
-    
-    printf("mask: min:%f max:%f \n",min(),max());
-    
-    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
-    img=tmp_img;
-    dim[0]=tmp_dim[0];
-    dim[1]=tmp_dim[1];
-    dim[2]=tmp_dim[2];
-    dim[3]=tmp_dim[3];
-    voxdim[0]=tmp_voxdim[0];
-    voxdim[1]=tmp_voxdim[1];
-    voxdim[2]=tmp_voxdim[2];
-    voxdim[3]=tmp_voxdim[3];
-    g_selectedVolume=tmp_g_selectedVolume;
-    
-    printf("volume: min:%f max:%f \n",min(),max());
+    loadVolume(path,&mask_hdr,&mask_img);       //load mask in the global variables
+    mask_dim[0]=mask_hdr->dim[1];
+    mask_dim[1]=mask_hdr->dim[2];
+    mask_dim[2]=mask_hdr->dim[3];
     
     int		i,j,k;
 	float	mi,ma;
@@ -2065,16 +2692,9 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
     int				mask_dim[4];
-    float           mask_voxdim[4];
     AnalyzeHeader	*mask_hdr2;
     char			*mask_img2;
     int				mask_dim2[4];
-    float           mask_voxdim2[4];
-    AnalyzeHeader	*tmp_hdr;
-    char			*tmp_img;
-    int				*tmp_dim;
-    float           *tmp_voxdim;
-    int             *tmp_g_selectedVolume;
     
     
     
@@ -2097,55 +2717,14 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
         exit(1);
     }
     
-    tmp_hdr=hdr;        //save data from -i temporarely
-    tmp_img=img;
-    tmp_dim=dim;
-    tmp_voxdim=voxdim;
-    tmp_g_selectedVolume=g_selectedVolume;
-    
-    g_selectedVolume=0;
-    loadVolume(path);       //load mask in the global variables
-    mask_hdr=hdr;           //copy global variables in local variables
-    mask_img=img;
-    mask_dim[0]=dim[0];
-    mask_dim[1]=dim[1];
-    mask_dim[2]=dim[2];
-    mask_dim[3]=dim[3];
-    mask_voxdim[0]=voxdim[0];
-    mask_voxdim[1]=voxdim[1];
-    mask_voxdim[2]=voxdim[2];
-    mask_voxdim[3]=voxdim[3];
-    
-    printf("mask: min:%f max:%f \n",min(),max());
-    
-    g_selectedVolume=0;
-    loadVolume(path2);       //load mask2 in the global variables
-    mask_hdr2=hdr;           //copy global variables in local variables
-    mask_img2=img;
-    mask_dim2[0]=dim[0];
-    mask_dim2[1]=dim[1];
-    mask_dim2[2]=dim[2];
-    mask_dim2[3]=dim[3];
-    mask_voxdim2[0]=voxdim[0];
-    mask_voxdim2[1]=voxdim[1];
-    mask_voxdim2[2]=voxdim[2];
-    mask_voxdim2[3]=voxdim[3];
-    
-    printf("mask2: min:%f max:%f \n",min(),max());
-    
-    hdr=tmp_hdr;            //copy back temporary saved values from -i back to the global variables
-    img=tmp_img;
-    dim[0]=tmp_dim[0];
-    dim[1]=tmp_dim[1];
-    dim[2]=tmp_dim[2];
-    dim[3]=tmp_dim[3];
-    voxdim[0]=tmp_voxdim[0];
-    voxdim[1]=tmp_voxdim[1];
-    voxdim[2]=tmp_voxdim[2];
-    voxdim[3]=tmp_voxdim[3];
-    g_selectedVolume=tmp_g_selectedVolume;
-    
-    printf("volume: min:%f max:%f \n",min(),max());
+    loadVolume(path,&mask_hdr,&mask_img);       //load mask in the global variables
+    mask_dim[0]=mask_hdr->dim[1];
+    mask_dim[1]=mask_hdr->dim[2];
+    mask_dim[2]=mask_hdr->dim[3];
+    loadVolume(path2, &mask_hdr2, &mask_img2);       //load mask2 in the global variables
+    mask_dim2[0]=mask_hdr2->dim[1];
+    mask_dim2[1]=mask_hdr2->dim[2];
+    mask_dim2[2]=mask_hdr2->dim[3];
     
     int		i,j,k;
 	float	mi,ma;
@@ -2186,29 +2765,130 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
 	free(hist);
     
 }
+void mult(float val)
+{
+    int             i;
+    // mult
+    for(i=0;i<dim[0]*dim[1]*dim[2];i++)
+        setValue1(val*getValue1(i),i);
+}
+void not()
+{
+    int             i;
+    // not
+    for(i=0;i<dim[0]*dim[1]*dim[2];i++)
+        setValue1(!getValue1(i),i);
+}
+void or(char *path)
+{
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int             i;
+    int             a,b;
 
+    loadVolume(path,&mask_hdr,&mask_img);
+    
+    // check dimensions
+    if(dim[0]!=mask_hdr->dim[1] ||
+       dim[1]!=mask_hdr->dim[2] ||
+       dim[2]!=mask_hdr->dim[3])
+    {
+        printf("ERROR: dimensions do not match in xor\n");
+        return;
+    }
+    
+    // or
+    for(i=0;i<dim[0]*dim[1]*dim[2];i++)
+    {
+        a=getValue1(i);
+        b=getValue2(i,mask_hdr,mask_img);
+        setValue1(a|b,i);
+    }
+}
+void and(char *path)
+{
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int             i;
+    int             a,b;
+
+    loadVolume(path,&mask_hdr,&mask_img);
+    
+    // check dimensions
+    if(dim[0]!=mask_hdr->dim[1] ||
+       dim[1]!=mask_hdr->dim[2] ||
+       dim[2]!=mask_hdr->dim[3])
+    {
+        printf("ERROR: dimensions do not match in xor\n");
+        return;
+    }
+    
+    // and
+    for(i=0;i<dim[0]*dim[1]*dim[2];i++)
+    {
+        a=getValue1(i);
+        b=getValue2(i,mask_hdr,mask_img);
+        setValue1(a&b,i);
+    }
+}
+void xor(char *path)
+{
+    AnalyzeHeader	*mask_hdr;
+    char			*mask_img;
+    int             i;
+    int             a,b;
+
+    loadVolume(path,&mask_hdr,&mask_img);
+    
+    // check dimensions
+    if(dim[0]!=mask_hdr->dim[1] ||
+       dim[1]!=mask_hdr->dim[2] ||
+       dim[2]!=mask_hdr->dim[3])
+    {
+        printf("ERROR: dimensions do not match in xor\n");
+        return;
+    }
+    
+    // xor
+    for(i=0;i<dim[0]*dim[1]*dim[2];i++)
+    {
+        a=getValue1(i);
+        b=getValue2(i,mask_hdr,mask_img);
+        setValue1(a^b,i);
+    }
+}
 
 
 /*
 -i str                          input volume
 -o  str                         output volume
--selectVolume int				selects the n-th volume in a nifti file with many volumes	
+-boxFilter size iter            box filter the mri data with a box of size 'size' for 'iter' iterations
+-selectVolume int				selects the n-th volume in a nifti file with many volumes
+-selectVramon str               selects a specific volume from a vramonz file
+-infoVramon str                 display the list of volumes contained in a vramonz file
+-saveVramon str str             combine a volume and a mask into a vramonz file
+-connected i,j,k,label          set the 6 connected component starting at coordinate i,j,k to value 'label'
 -largest6con                    largest 6 connected component
 -dilate int                     dilate(size)
 -erode  int                     erode(size)
 -compress   float str           cosinus transform compress rate coeff_file
 -hist   int                     hist(#bins)
+-not                            logical not
+-or path                        logical or with volume at path
+-and path                       logical and with volume at path
+-xor path                       logical xor with volume at path
 -matchHist  str                 matchHistogram(another_mri)
 -stats                          stats, returns mean, std, min, max
 -tiff   str str str float       write slice as tiff file. Args: path, cmap, ori {x, y, z}, slice
 -info                           information: dimensions, data type, pixel size
--threshold  float int           threshold(level,direction)
+-threshold  float,int           threshold(level,direction)
 -volume                         calculate volume
 -zigzag                         print volume values in zigzag order
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
+-resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
 -strokeMesh str                 set the vertices of the mesh (text format) at input path to value=max+1
--surfaceNets level path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
- -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
+-surfaceNets level,path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
+-sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
 */
 
 #pragma mark -
@@ -2230,7 +2910,7 @@ int main (int argc, const char * argv[])
 	{		
 		if(strcmp(argv[i],"-i")==0)				// input volume
 		{
-			loadVolume((char*)argv[++i]);
+			loadVolume((char*)argv[++i],&hdr,&img);
 		}
 		else
 		if(strcmp(argv[i],"-o")==0)				// output volume
@@ -2251,9 +2931,29 @@ int main (int argc, const char * argv[])
             i+=1;
 		}
 		else
+		if(strcmp(argv[i],"-boxFilter")==0)		// boxFilter(size, iter)
+		{
+			int		size, iter;
+			sscanf(argv[++i]," %i ",&size);
+			sscanf(argv[++i]," %i ",&iter);
+			boxFilter(size,iter);
+		}
+		else
 		if(strcmp(argv[i],"-largest6con")==0)	// largest 6 connected component
 		{
 			largestConnected();
+		}
+		else
+		if(strcmp(argv[i],"-connected")==0)	// largest 6 connected component
+		{
+            char *str=(char*)argv[++i];
+            int n,i,j,k,label;
+            n=sscanf(str,"%i,%i,%i,%i",&i,&j,&k,&label);
+            if(n!=4) {
+                printf("ERROR: You have to provide 4 values: i,j,k,label\n");
+                return 1;
+            }
+            connected(i,j,k,label);
 		}
 		else
 		if(strcmp(argv[i],"-dilate")==0)		// dilate(size)
@@ -2355,9 +3055,10 @@ int main (int argc, const char * argv[])
             ori = strtok(NULL,",");
             
             strslice = strtok(NULL,",");
-            if(strslice !=NULL){
+            if(strslice !=NULL)
+            {
                 sscanf(strslice," %f ",&slice);
-            }else{
+            } else {
                 slice=-1;
             }
             drawSlice(path,cmap,ori,slice);
@@ -2381,7 +3082,13 @@ int main (int argc, const char * argv[])
 		{
 			float	level;
 			int		direction;
-			sscanf(argv[++i]," %f , %i ",&level,&direction);
+			int     n;
+			n=sscanf(argv[++i]," %f , %i ",&level,&direction);
+			if(n!=2)
+			{
+			    printf("ERROR: threshold takes two arguments, level and direction\n");
+			    return 1;
+			}
 			threshold(level,direction);
 		}
 		else
@@ -2396,22 +3103,45 @@ int main (int argc, const char * argv[])
             zigzag();
         }
         else
-		if(strcmp(argv[i],"-decompose")==0)		// decompose(basename) a volume with many values into volumes with one single value
-		{
-			decompose((char*)argv[++i]);
-		}
+        if(strcmp(argv[i],"-decompose")==0)		// decompose(basename) a volume with many values into volumes with one single value
+        {
+            decompose((char*)argv[++i]);
+        }
         else
-        if(strcmp(argv[i],"-strokeMesh")==0)		// strokeMesh(path) set the vertices of the mesh (text format) at input path to value=max+1
+        if(strcmp(argv[i],"-resize")==0)		// resize(x,y,z) resize the volume to the new x, y, z dimensions, keeping the original data at the center
+        {
+            char *str=(char*)argv[++i];
+            int n, x, y, z;
+            n=sscanf(str, " %i, %i, %i ", &x, &y, &z);
+            if(n!=3)
+            {
+                printf("ERROR: resize requires 3 arguments, the new dimensions x, y and z\n");
+                return 1;
+            }
+            resize(x,y,z);
+        }
+        else
+        if(strcmp(argv[i],"-strokeMesh")==0)		// strokeMesh(path) set the voxels intersecting the mesh (txt or ply format) at input path to value=max+1
         {
             strokeMesh((char*)argv[++i]);
         }
         else
         if(strcmp(argv[i],"-surfaceNets")==0)		// extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
         {
-            float level=atof(argv[++i]);
-            char *path=(char*)argv[++i];
-            Mesh	m;
+            char *str=(char*)argv[++i];
+            int n;
+            float level;
+            char path[512];
+            Mesh m;
             FILE *f;
+            
+            n=sscanf(str," %f , %s ",&level,path);
+            if(n!=2)
+            {
+                printf("ERROR: surfaceNets requires 2 arguments: level, path\n");
+                return 1;
+            }
+            
             surfaceNets_init();
             surfaceNets(level,&m,0);	// 1st pass: evaluate memory requirements
             m.p=(float3D*)calloc(m.np,sizeof(float3D));
@@ -2439,11 +3169,67 @@ int main (int argc, const char * argv[])
             showNiiHeader();
         }
         else
-        if(strcmp(argv[i],"-setNiiHdr")==0)		// show complete nifti 1 header
+        if(strcmp(argv[i],"-setNiiHdr")==0)		// set values in a nifti 1 header
         {
             char    *var=(char*)argv[++i];
             char    *val=(char*)argv[++i];
             setNiiHeader(var,val);
+        }
+        else
+        if(strcmp(argv[i],"-createNiiHdr")==0)		// create a nifti 1 header from a file
+        {
+            char    *txtpath=(char*)argv[++i];
+            char    *hdrpath=(char*)argv[++i];
+            createNiiHeader(txtpath,hdrpath);
+        }
+        else
+        if(strcmp(argv[i],"-new")==0)    // create a new volume with dimx,dimy,dimz,pixx,pixy,pixz
+        {
+            int n,dx,dy,dz;
+            float px,py,pz;
+            float ox,oy,oz;
+            char *str=(char*)argv[++i];
+            n=sscanf(str," %i , %i , %i , %f , %f , %f , %f , %f , %f ",&dx,&dy,&dz,&px,&py,&pz,&ox,&oy,&oz);
+            if(n!=9) {
+                printf("ERROR: You have to provide 9 values: dimx, dimy, dimz, pixdimx, pixdimy, pixdimz,offx, offy, offz. %i were provided (%s).\n", n, str);
+                return 1;
+            }
+            newNiiVolume(dx,dy,dz,px,py,pz,ox,oy,oz);
+        }
+        else
+        if(strcmp(argv[i],"-mult")==0)
+        {
+            float val;
+            int   n;
+            n=sscanf(argv[++i]," %f ",&val);
+            if(n!=1) {
+                printf("ERROR: You have to provide 1 value to multiply. %i were provided.\n", n);
+                return 1;
+            }
+            mult(val);
+        }
+        else
+        if(strcmp(argv[i],"-not")==0)
+        {
+            not();
+        }
+        else
+        if(strcmp(argv[i],"-or")==0)
+        {
+            char *path=(char*)argv[++i];
+            or(path);
+        }
+        else
+        if(strcmp(argv[i],"-and")==0)
+        {
+            char *path=(char*)argv[++i];
+            and(path);
+        }
+        else
+        if(strcmp(argv[i],"-xor")==0)
+        {
+            char *path=(char*)argv[++i];
+            xor(path);
         }
         else
         {
