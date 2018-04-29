@@ -1861,7 +1861,8 @@ void strokeMesh(char *path)
     sz.y=max.y-min.y;
     sz.z=max.z-min.z;
     */
-    
+
+/*
     // transform vertex coordinates to voxel indices
     printf("offset: %f, %f, %f\n",h->srow_x[3],h->srow_y[3],h->srow_z[3]);
     printf("pixdim: %f, %f, %f\n",pixdim[0],pixdim[1],pixdim[2]);
@@ -1871,7 +1872,8 @@ void strokeMesh(char *path)
         p[i].y=(p[i].y-h->srow_y[3])/pixdim[1];
         p[i].z=(p[i].z-h->srow_z[3])/pixdim[2];
     }
-    
+*/
+
     // scan triangles
     for(l=0;l<nt;l++)
     {
@@ -2559,7 +2561,6 @@ int saveMaskedVolume_Text(char *path, char *maskpath){
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
     int				mask_dim[4];
-    int				i, j, k;
     
     loadVolume(maskpath,&mask_hdr,&mask_img);
     mask_dim[0]=mask_hdr->dim[1];
@@ -2572,9 +2573,9 @@ int saveMaskedVolume_Text(char *path, char *maskpath){
     
     printf("volume: min:%f max:%f \n",min(),max());
     
-    for(i=0;i<dim[0];i++)
-		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++){
+    for(int i=0;i<dim[0];i++)
+		for(int j=0;j<dim[1];j++)
+			for(int k=0;k<dim[2];k++){
                 int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
                 if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
                     fprintf(f, "%f ",getValue(i, j, k));
@@ -2883,10 +2884,11 @@ void xor(char *path)
 -info                           information: dimensions, data type, pixel size
 -threshold  float,int           threshold(level,direction)
 -volume                         calculate volume
+-new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,offy,offz
 -zigzag                         print volume values in zigzag order
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
 -resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
--strokeMesh str                 set the vertices of the mesh (text format) at input path to value=max+1
+-strokeMesh str                 set the surface of the mesh (text format) at input path to value=max+1; the mesh needs to be in voxel coordinates; (you need to either provide an empty volume or stroke the mesh over the MRI that the segmentation used for mesh extraction had been created on)
 -surfaceNets level,path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
 -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
 */
@@ -3151,7 +3153,8 @@ int main (int argc, const char * argv[])
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
             for(i=0;i<m.np;i++)
-                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+//                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
             for(i=0;i<m.nt;i++)
                 fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
             fclose(f);
