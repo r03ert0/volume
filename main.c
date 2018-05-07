@@ -1862,6 +1862,7 @@ void strokeMesh(char *path)
     sz.z=max.z-min.z;
     */
     
+/*
     // transform vertex coordinates to voxel indices
     printf("offset: %f, %f, %f\n",h->srow_x[3],h->srow_y[3],h->srow_z[3]);
     printf("pixdim: %f, %f, %f\n",pixdim[0],pixdim[1],pixdim[2]);
@@ -1871,6 +1872,7 @@ void strokeMesh(char *path)
         p[i].y=(p[i].y-h->srow_y[3])/pixdim[1];
         p[i].z=(p[i].z-h->srow_z[3])/pixdim[2];
     }
+*/
     
     // scan triangles
     for(l=0;l<nt;l++)
@@ -3151,7 +3153,9 @@ int main (int argc, const char * argv[])
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
             for(i=0;i<m.np;i++)
-                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+//                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
+
             for(i=0;i<m.nt;i++)
                 fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
             fclose(f);
