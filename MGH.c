@@ -117,7 +117,7 @@ void MGH_load_vol(char *path, char **vol, int *sz, int endianness)
 	
 	// swap if needed
 	if(endianness==kINTEL)
-		swap_img(*vol+sizeof(hdr),hdr);
+		swap_analyze_img(*vol+sizeof(hdr),hdr);
 	fclose(f);
 	
 	*sz=hdr.dim[1]*hdr.dim[2]*hdr.dim[3]*bytesPerVoxel(hdr)+sizeof(hdr);

@@ -7,6 +7,7 @@ char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 #include "Analyze.h"
 #include "MGH.h"
 #include "Nifti.h"
+#include "swap.h"
 #include "math.h"
 #include "limits.h"
 #include <unistd.h>
@@ -56,10 +57,13 @@ float getValue(int x, int y, int z)
 	else
 	{
 		switch(hdr->datatype)
-		{	case UCHAR: val=((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-			case SHORT: val=        ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-			case INT:	val=          ((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-			case FLOAT:	val=        ((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+		{	case UCHAR:     val= ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case DT_INT8:   val=          ((char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case SHORT:     val=         ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case DT_UINT16: val=((unsigned short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case INT:       val=           ((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case DT_UINT32: val=  ((unsigned int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case FLOAT:     val=         ((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
 		}
 	}
 	return val;
@@ -77,10 +81,13 @@ float getValue1(int index)
     else
     {
         switch(hdr->datatype)
-        {	case UCHAR: val=((unsigned char*)img)[index];	break;
-            case SHORT: val=        ((short*)img)[index];	break;
-            case INT:	val=          ((int*)img)[index];	break;
-            case FLOAT:	val=        ((float*)img)[index];	break;
+        {	case UCHAR:     val= ((unsigned char*)img)[index];	break;
+            case DT_INT8:   val=          ((char*)img)[index];	break;
+            case SHORT:     val=         ((short*)img)[index];	break;
+            case DT_UINT16: val=((unsigned short*)img)[index];	break;
+            case INT:	    val=           ((int*)img)[index];	break;
+            case DT_UINT32: val=  ((unsigned int*)img)[index];	break;
+            case FLOAT:     val=         ((float*)img)[index];	break;
         }
     }
     return val;
@@ -98,10 +105,13 @@ float getValue2(int i, AnalyzeHeader *theHdr, char *theImg)
     else
     {
         switch(theHdr->datatype)
-        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-            case SHORT: val=        ((short*)theImg)[i];	break;
-            case INT:	val=          ((int*)theImg)[i];	break;
-            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        {	case UCHAR:     val= ((unsigned char*)theImg)[i];	break;
+            case DT_INT8:  val=           ((char*)theImg)[i];	break;
+            case SHORT:     val=         ((short*)theImg)[i];	break;
+            case DT_UINT16: val=((unsigned short*)theImg)[i];	break;
+            case INT:       val=           ((int*)theImg)[i];	break;
+            case DT_UINT32: val=  ((unsigned int*)theImg)[i];	break;
+            case FLOAT:     val=         ((float*)theImg)[i];	break;
         }
     }
     return val;
@@ -120,10 +130,13 @@ float getValue3(int x, int y, int z, AnalyzeHeader *theHdr, char *theImg)
     else
     {
         switch(theHdr->datatype)
-        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-            case SHORT: val=        ((short*)theImg)[i];	break;
-            case INT:	val=          ((int*)theImg)[i];	break;
-            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        {	case UCHAR:     val= ((unsigned char*)theImg)[i];	break;
+            case DT_INT8:   val=          ((char*)theImg)[i];	break;
+            case SHORT:     val=         ((short*)theImg)[i];	break;
+            case DT_UINT16: val=((unsigned short*)theImg)[i];	break;
+            case INT:       val=           ((int*)theImg)[i];	break;
+            case DT_UINT32: val=  ((unsigned int*)theImg)[i];	break;
+            case FLOAT:     val=         ((float*)theImg)[i];	break;
         }
     }
     return val;
@@ -137,28 +150,37 @@ void setValue(float val, int x, int y, int z)
         return;
     }
     switch(hdr->datatype)
-    {   case UCHAR: ((unsigned char*)img)[i]=val; break;
-        case SHORT: ((short*)img)[i]=val;         break;
-        case INT:   ((int*)img)[i]=val;           break;
-        case FLOAT: ((float*)img)[i]=val;         break;
+    {   case UCHAR:     ((unsigned char*)img)[i]=val;  break;
+        case DT_INT8:   ((char*)img)[i]=val;           break;
+        case SHORT:     ((short*)img)[i]=val;          break;
+        case DT_UINT16: ((unsigned short*)img)[i]=val; break;
+        case INT:       ((int*)img)[i]=val;            break;
+        case DT_UINT32: ((unsigned int*)img)[i]=val;   break;
+        case FLOAT:     ((float*)img)[i]=val;          break;
     }
 }
 void setValue1(float val, int i)
 {
     switch(hdr->datatype)
-    {   case UCHAR: ((unsigned char*)img)[i]=val;	break;
-        case SHORT: ((short*)img)[i]=val;			break;
-        case INT:	((int*)img)[i]=val;				break;
-        case FLOAT:	((float*)img)[i]=val;			break;
+    {   case UCHAR: ((unsigned char*)img)[i]=val;      break;
+        case DT_INT8:   ((char*)img)[i]=val;           break;
+        case SHORT:     ((short*)img)[i]=val;          break;
+        case DT_UINT16: ((unsigned short*)img)[i]=val; break;
+        case INT:       ((int*)img)[i]=val;            break;
+        case DT_UINT32: ((unsigned int*)img)[i]=val;   break;
+        case FLOAT:     ((float*)img)[i]=val;          break;
     }
 }
 void setValue2(float val, int i, AnalyzeHeader *theHdr, char *theImg)
 {
     switch(theHdr->datatype)
-    {	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
-        case SHORT: ((short*)theImg)[i]=val;			break;
-        case INT:	((int*)theImg)[i]=val;				break;
-        case FLOAT:	((float*)theImg)[i]=val;			break;
+    {	case UCHAR:     ((unsigned char*)theImg)[i]=val;    break;
+        case DT_INT8:   ((char*)theImg)[i]=val;             break;
+        case SHORT:     ((short*)theImg)[i]=val;            break;
+        case DT_UINT16: ((unsigned short*)theImg)[i]=val;   break;
+        case INT:       ((int*)theImg)[i]=val;              break;
+        case DT_UINT32: ((unsigned int*)theImg)[i]=val;     break;
+        case FLOAT:     ((float*)theImg)[i]=val;            break;
     }
 }
 #pragma mark -
@@ -809,12 +831,15 @@ void info(void)
 	printf("dim: %i %i %i [%i]\n",hdr->dim[1],hdr->dim[2],hdr->dim[3],hdr->dim[4]);
 	printf("dataType: ");
 	switch(hdr->datatype)
-	{	case UCHAR:		printf("uchar\n"); break;
-		case SHORT:		printf("short\n"); break;
-		case FLOAT:		printf("float\n"); break;
-		case INT:		printf("int\n"); break;
-		case RGB:		printf("rgb\n"); break;
-		case RGBFLOAT:	printf("rgbfloat\n"); break;
+	{	case UCHAR:     printf("uchar\n"); break;
+        case DT_INT8:   printf("char\n"); break;
+		case SHORT:     printf("short\n"); break;
+		case DT_UINT16: printf("ushort\n"); break;
+		case FLOAT:     printf("float\n"); break;
+		case INT:       printf("int\n"); break;
+		case DT_UINT32: printf("uint\n"); break;
+		case RGB:       printf("rgb\n"); break;
+		case RGBFLOAT:  printf("rgbfloat\n"); break;
 	}
 	printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
 }
@@ -1776,12 +1801,15 @@ void resize(int dx, int dy, int dz)
     switch(hdr->datatype)
     {
         case UCHAR:
+        case DT_INT8:
             sz=dx*dy*dz*sizeof(char)+sizeof(nifti_1_header);
             break;
         case SHORT:
+        case DT_UINT16:
             sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
             break;
         case INT:
+        case DT_UINT32:
             sz=dx*dy*dz*sizeof(int)+sizeof(nifti_1_header);
             break;
         case FLOAT:
@@ -1962,7 +1990,7 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
     int buffer_length=0;
     int vertices_length=0;
     int faces_length=0;
-    int	i,j,k;
+    int i,j,k;
     
     R[0]=1;
     R[1]=dim[0]+1;
@@ -3149,7 +3177,7 @@ int main (int argc, const char * argv[])
             m.p=(float3D*)calloc(m.np,sizeof(float3D));
             m.t=(int3D*)calloc(m.nt,sizeof(int3D));
             surfaceNets(level,&m,1);	// 2nd pass: store vertices and triangles
-            
+
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
             for(i=0;i<m.np;i++)
