@@ -89,11 +89,8 @@ void Analyze_save_hdr(char *path, AnalyzeHeader hdr);
 void Analyze_save_img(char *path, AnalyzeHeader hdr, char *img);
 
 int bytesPerVoxel(AnalyzeHeader hdr);
-void swap_hdr(AnalyzeHeader *hdr);
-void swap_img(char *img, AnalyzeHeader hdr);
-void swap_short(short *v);
-void swap_int(int *v);
-void swap_float(float *v);
-void swap_rgbfloat(float *v);
+
+void swap_analyze_hdr(AnalyzeHeader *hdr);
+void swap_analyze_img(char *img, AnalyzeHeader hdr);
 
 #endif
