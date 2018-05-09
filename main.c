@@ -2304,8 +2304,10 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
     char cmd[4096];
 
     // create temporary file name
-    if(getenv("TEMP")==NULL) strcat(filename,"/tmp");
-    else                     strcat(filename,getenv("TEMP"));
+    if(getenv("TEMP")==NULL)
+        strcat(filename,"/tmp");
+    else
+        strcat(filename,getenv("TEMP"));
     strcat(filename,"/nii.XXXXXX");
     result=mkstemp(filename);
     if(result==-1)
@@ -2318,14 +2320,24 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
     
     // uncompress orig.mgz into a temporary .mgh file
     sprintf(cmd,"gunzip -c %s > %s",path,filename);
-    system(cmd);
-    
+    result=system(cmd);
+    if(result)
+    {
+        printf("ERROR: Can't open file %s\n", path);
+        return 1;
+    }
+
     // load temporary file
     loadVolume_Nifti(filename, theHdr, theImg);
 
     // clean up
     sprintf(cmd,"/bin/rm -r %s",filename);
-    system(cmd);
+    result=system(cmd);
+    if(result)
+    {
+        printf("ERROR: Can't remove file %s\n", filename);
+        return 1;
+    }
 
     return 0;
 }
@@ -2510,15 +2522,15 @@ int saveVolume_Schematic(char *path)
 }
 int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
-	int	err,format;
-	
-	format=getformatindex(path);
-	
-	switch(format)
-	{
-		case kAnalyzeVolume:
-			err=loadVolume_Analyze(path,theHdr,theImg);
-			break;
+    int	err,format;
+
+    format=getformatindex(path);
+
+    switch(format)
+    {
+        case kAnalyzeVolume:
+            err=loadVolume_Analyze(path,theHdr,theImg);
+            break;
         case kMGZVolume:
             err=loadVolume_MGZ(path,theHdr,theImg);
             break;
@@ -2536,15 +2548,15 @@ int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
             err=1;
             printf("ERROR: Cannot read schematic volume yet...");
             break;
-		default:
-			printf("ERROR: Input volume format not recognised\n");
-			return 1;			
-	}
-	if(err!=0)
-	{
-		printf("ERROR: cannot read file: %s\n",path);
-		return 1;
-	}
+        default:
+            printf("ERROR: Input volume format not recognised\n");
+            return 1;			
+    }
+    if(err!=0)
+    {
+        printf("ERROR: cannot read file: %s\n",path);
+        return 1;
+    }
 	return 0;
 }
 int saveVolume(char *path)
@@ -2934,13 +2946,19 @@ int main (int argc, const char * argv[])
 	// appear in the arguments passed to the command
 	
 	int		i;
+	int result;
 	
 
 	for(i=1;i<argc;i++)
 	{		
 		if(strcmp(argv[i],"-i")==0)				// input volume
 		{
-			loadVolume((char*)argv[++i],&hdr,&img);
+			result=loadVolume((char*)argv[++i],&hdr,&img);
+			if(result)
+			{
+			    printf("ERROR: Can't load file\n");
+			    return 1;
+			}
 		}
 		else
 		if(strcmp(argv[i],"-o")==0)				// output volume
