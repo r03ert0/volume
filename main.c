@@ -1134,95 +1134,95 @@ void decompose(char *basename)
 }
 void matchHistogram(char *volpath)
 {
-	int				i,j,n,n0;
-	int				sz;
-	int				swapped;
-	char			*addr;
-	AnalyzeHeader	*hdr0;
-	char			*img0;
-	int				*hist,*hist0;
-	float			*cumsum0,cumsum,prev;
-	float			val;
-	float			min,min0;
-	float			max,max0;
-	float			d,t,*trans;
-	
-	// load target volume
-	Analyze_load(volpath,&addr,&sz,&swapped);
-	hdr0=(AnalyzeHeader*)addr;
-	img0=(char*)(addr+sizeof(AnalyzeHeader));
-	// find max grey value in target volume
-	n0=hdr0->dim[1]*hdr0->dim[2]*hdr0->dim[3];
-	min0=max0=getValue2(0,hdr0,img0);
-	for(i=0;i<n0;i++)
-	{
-		val=getValue2(i,hdr0,img0);
-		if(val>max0)
-			max0=val;
-		if(val<min0)
-			min0=val;
-	}
-	// compute histogram for target volume
-	hist0=(int*)calloc(max0-min0+1,sizeof(int));
-	for(i=0;i<n0;i++)
-		hist0[(int)(getValue2(i,hdr0,img0)-min0)]++;
-	// compute cummulative histogram for target colume
-	cumsum0=(float*)calloc(max0-min0+1,sizeof(float));
-	cumsum0[0]=hist0[0];///(float)n0;
-	for(i=1;i<max0-min0+1;i++)
-		cumsum0[i]=cumsum0[i-1]+hist0[i];
-	for(i=0;i<max0-min0+1;i++)
-		cumsum0[i]/=(float)n0;
-	
-	// find max grey value in source volume
-	n=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
-	min=max=getValue2(0,hdr,img);
-	for(i=0;i<n;i++)
-	{
-		val=getValue2(i,hdr,img);
-		if(val>max)
-			max=val;
-		if(val<min)
-			min=val;
-	}
-	// compute histogram for source volume
-	hist=(int*)calloc(max-min+1,sizeof(int));
-	for(i=0;i<n;i++)
-		hist[(int)(getValue2(i,hdr,img)-min)]++;
-	
-	// compute histogram matching transformation
-	trans=(float*)calloc(max,sizeof(float));
-	cumsum=0;
-	prev=0;
-	j=0;
-	for(i=0;i<max-min+1;i++)
-	{
-		cumsum+=hist[i];
-		
-		// find grey level in target volume where cumsum0==cumsum
-		while(cumsum0[j]<cumsum/(float)n)
-		{
-			prev=cumsum0[j];
-			j++;
-		}
-		d=cumsum0[j]-prev;
-		if(d)
-			t=(cumsum/(float)n-prev)/d;
-		else
-			t=0;
-		
-		val=MAX(j-1,0)*(1-t)+j*t+min0;
-		
-		if(val>max0)
-			printf("ça va pas, non?\n");
-		
-		trans[i+(int)min]=val;
-		
-	}
-	
-	// apply histogram matching transformation
-	for(i=0;i<n;i++)
-		setValue2(trans[(int)getValue2(i,hdr,img)],i,hdr,img);
+    int				i,j,n,n0;
+    int				sz;
+    int				swapped;
+    char			*addr;
+    AnalyzeHeader	*hdr0;
+    char			*img0;
+    int				*hist,*hist0;
+    float			*cumsum0,cumsum,prev;
+    float			val;
+    float			min,min0;
+    float			max,max0;
+    float			d,t,*trans;
+
+    // load target volume
+    Analyze_load(volpath,&addr,&sz,&swapped);
+    hdr0=(AnalyzeHeader*)addr;
+    img0=(char*)(addr+sizeof(AnalyzeHeader));
+    // find max grey value in target volume
+    n0=hdr0->dim[1]*hdr0->dim[2]*hdr0->dim[3];
+    min0=max0=getValue2(0,hdr0,img0);
+    for(i=0;i<n0;i++)
+    {
+        val=getValue2(i,hdr0,img0);
+        if(val>max0)
+            max0=val;
+        if(val<min0)
+            min0=val;
+    }
+    // compute histogram for target volume
+    hist0=(int*)calloc(max0-min0+1,sizeof(int));
+    for(i=0;i<n0;i++)
+        hist0[(int)(getValue2(i,hdr0,img0)-min0)]++;
+    // compute cummulative histogram for target colume
+    cumsum0=(float*)calloc(max0-min0+1,sizeof(float));
+    cumsum0[0]=hist0[0];///(float)n0;
+    for(i=1;i<max0-min0+1;i++)
+        cumsum0[i]=cumsum0[i-1]+hist0[i];
+    for(i=0;i<max0-min0+1;i++)
+        cumsum0[i]/=(float)n0;
+
+    // find max grey value in source volume
+    n=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
+    min=max=getValue2(0,hdr,img);
+    for(i=0;i<n;i++)
+    {
+        val=getValue2(i,hdr,img);
+        if(val>max)
+            max=val;
+        if(val<min)
+            min=val;
+    }
+    // compute histogram for source volume
+    hist=(int*)calloc(max-min+1,sizeof(int));
+    for(i=0;i<n;i++)
+        hist[(int)(getValue2(i,hdr,img)-min)]++;
+
+    // compute histogram matching transformation
+    trans=(float*)calloc(max,sizeof(float));
+    cumsum=0;
+    prev=0;
+    j=0;
+    for(i=0;i<max-min+1;i++)
+    {
+        cumsum+=hist[i];
+
+        // find grey level in target volume where cumsum0==cumsum
+        while(cumsum0[j]<cumsum/(float)n)
+        {
+            prev=cumsum0[j];
+            j++;
+        }
+        d=cumsum0[j]-prev;
+        if(d)
+            t=(cumsum/(float)n-prev)/d;
+        else
+            t=0;
+
+        val=MAX(j-1,0)*(1-t)+j*t+min0;
+
+        if(val>max0)
+            printf("ERROR: value larger than maximum\n");
+
+        trans[i+(int)min]=val;
+
+    }
+
+    // apply histogram matching transformation
+    for(i=0;i<n;i++)
+        setValue2(trans[(int)getValue2(i,hdr,img)],i,hdr,img);
 }
 char* c2s(char *c, int n)
 {
