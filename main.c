@@ -1,12 +1,13 @@
-//char	version[]="volume, v2, roberto toro, 10 December 2010";	// added -decompose
-//char	version[]="volume, v3, roberto toro, 9 August 2015";	// added support to nii and nii.gz
-char	version[]="volume, v4, roberto toro, 9 August 2015";	// added surfaceNets for isosurface extraction
-char	version[]="volume, v5, roberto toro, 10 Decembre 2017";	// added resize
+//char version[]="volume, v2, roberto toro, 10 December 2010"; // added -decompose
+//char version[]="volume, v3, roberto toro, 9 August 2015"; // added support to nii and nii.gz
+//char version[]="volume, v4, roberto toro, 9 August 2015"; // added surfaceNets for isosurface extraction
+char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 
 #include <stdio.h>
 #include "Analyze.h"
 #include "MGH.h"
 #include "Nifti.h"
+#include "swap.h"
 #include "math.h"
 #include "limits.h"
 #include <unistd.h>
@@ -45,6 +46,7 @@ void threshold(float value, int direction);
 
 float getValue(int x, int y, int z)
 {
+<<<<<<< HEAD
     float		val;
     RGBValue	rgb;
 
@@ -63,6 +65,29 @@ float getValue(int x, int y, int z)
         }
     }
     return val;
+=======
+	float		val;
+	RGBValue	rgb;
+
+	if(hdr->datatype==RGB)
+	{
+		rgb=((RGBValue*)img)[z*dim[1]*dim[0]+y*dim[0]+x];
+		val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+	}
+	else
+	{
+		switch(hdr->datatype)
+		{	case UCHAR:     val= ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case DT_INT8:   val=          ((char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case SHORT:     val=         ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case DT_UINT16: val=((unsigned short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case INT:       val=           ((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case DT_UINT32: val=  ((unsigned int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+			case FLOAT:     val=         ((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+		}
+	}
+	return val;
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
 }
 float getValue1(int index)
 {
@@ -77,10 +102,13 @@ float getValue1(int index)
     else
     {
         switch(hdr->datatype)
-        {	case UCHAR: val=((unsigned char*)img)[index];	break;
-            case SHORT: val=        ((short*)img)[index];	break;
-            case INT:	val=          ((int*)img)[index];	break;
-            case FLOAT:	val=        ((float*)img)[index];	break;
+        {	case UCHAR:     val= ((unsigned char*)img)[index];	break;
+            case DT_INT8:   val=          ((char*)img)[index];	break;
+            case SHORT:     val=         ((short*)img)[index];	break;
+            case DT_UINT16: val=((unsigned short*)img)[index];	break;
+            case INT:	    val=           ((int*)img)[index];	break;
+            case DT_UINT32: val=  ((unsigned int*)img)[index];	break;
+            case FLOAT:     val=         ((float*)img)[index];	break;
         }
     }
     return val;
@@ -98,10 +126,13 @@ float getValue2(int i, AnalyzeHeader *theHdr, char *theImg)
     else
     {
         switch(theHdr->datatype)
-        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-            case SHORT: val=        ((short*)theImg)[i];	break;
-            case INT:	val=          ((int*)theImg)[i];	break;
-            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        {	case UCHAR:     val= ((unsigned char*)theImg)[i];	break;
+            case DT_INT8:  val=           ((char*)theImg)[i];	break;
+            case SHORT:     val=         ((short*)theImg)[i];	break;
+            case DT_UINT16: val=((unsigned short*)theImg)[i];	break;
+            case INT:       val=           ((int*)theImg)[i];	break;
+            case DT_UINT32: val=  ((unsigned int*)theImg)[i];	break;
+            case FLOAT:     val=         ((float*)theImg)[i];	break;
         }
     }
     return val;
@@ -120,39 +151,57 @@ float getValue3(int x, int y, int z, AnalyzeHeader *theHdr, char *theImg)
     else
     {
         switch(theHdr->datatype)
-        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-            case SHORT: val=        ((short*)theImg)[i];	break;
-            case INT:	val=          ((int*)theImg)[i];	break;
-            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        {	case UCHAR:     val= ((unsigned char*)theImg)[i];	break;
+            case DT_INT8:   val=          ((char*)theImg)[i];	break;
+            case SHORT:     val=         ((short*)theImg)[i];	break;
+            case DT_UINT16: val=((unsigned short*)theImg)[i];	break;
+            case INT:       val=           ((int*)theImg)[i];	break;
+            case DT_UINT32: val=  ((unsigned int*)theImg)[i];	break;
+            case FLOAT:     val=         ((float*)theImg)[i];	break;
         }
     }
     return val;
 }
 void setValue(float val, int x, int y, int z)
 {
+    int i = z*dim[1]*dim[0]+y*dim[0]+x;
+    if( i >= dim[0]*dim[1]*dim[2] || i<0 )
+    {
+        printf("value %i, %i, %i is out of bounds [%i, %i, %i]\n",x,y,z,dim[0],dim[1],dim[2]);
+        return;
+    }
     switch(hdr->datatype)
-    {	case UCHAR: ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;			break;
-        case SHORT: ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-        case INT:	((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
-        case FLOAT:	((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x]=val;					break;
+    {   case UCHAR:     ((unsigned char*)img)[i]=val;  break;
+        case DT_INT8:   ((char*)img)[i]=val;           break;
+        case SHORT:     ((short*)img)[i]=val;          break;
+        case DT_UINT16: ((unsigned short*)img)[i]=val; break;
+        case INT:       ((int*)img)[i]=val;            break;
+        case DT_UINT32: ((unsigned int*)img)[i]=val;   break;
+        case FLOAT:     ((float*)img)[i]=val;          break;
     }
 }
 void setValue1(float val, int i)
 {
     switch(hdr->datatype)
-    {	case UCHAR: ((unsigned char*)img)[i]=val;	break;
-        case SHORT: ((short*)img)[i]=val;			break;
-        case INT:	((int*)img)[i]=val;				break;
-        case FLOAT:	((float*)img)[i]=val;			break;
+    {   case UCHAR: ((unsigned char*)img)[i]=val;      break;
+        case DT_INT8:   ((char*)img)[i]=val;           break;
+        case SHORT:     ((short*)img)[i]=val;          break;
+        case DT_UINT16: ((unsigned short*)img)[i]=val; break;
+        case INT:       ((int*)img)[i]=val;            break;
+        case DT_UINT32: ((unsigned int*)img)[i]=val;   break;
+        case FLOAT:     ((float*)img)[i]=val;          break;
     }
 }
 void setValue2(float val, int i, AnalyzeHeader *theHdr, char *theImg)
 {
     switch(theHdr->datatype)
-    {	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
-        case SHORT: ((short*)theImg)[i]=val;			break;
-        case INT:	((int*)theImg)[i]=val;				break;
-        case FLOAT:	((float*)theImg)[i]=val;			break;
+    {	case UCHAR:     ((unsigned char*)theImg)[i]=val;    break;
+        case DT_INT8:   ((char*)theImg)[i]=val;             break;
+        case SHORT:     ((short*)theImg)[i]=val;            break;
+        case DT_UINT16: ((unsigned short*)theImg)[i]=val;   break;
+        case INT:       ((int*)theImg)[i]=val;              break;
+        case DT_UINT32: ((unsigned int*)theImg)[i]=val;     break;
+        case FLOAT:     ((float*)theImg)[i]=val;            break;
     }
 }
 #pragma mark -
@@ -295,7 +344,11 @@ int connected(int x, int y, int z, int label)
     n=0;
     for(;;)
     {
+<<<<<<< HEAD
         printf("%i %i %i. %i\n",x,y,z,nstack);
+=======
+        //printf("%i %i %i. %i\n",x,y,z,nstack);
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
         tmp[z*dim[1]*dim[0]+y*dim[0]+x]=1;
         n++;
     
@@ -800,6 +853,7 @@ void hist(int nbins)
 }
 void info(void)
 {
+<<<<<<< HEAD
     printf("dim: %i %i %i [%i]\n",hdr->dim[1],hdr->dim[2],hdr->dim[3],hdr->dim[4]);
     printf("dataType: ");
     switch(hdr->datatype)
@@ -811,6 +865,22 @@ void info(void)
         case RGBFLOAT:	printf("rgbfloat\n"); break;
     }
     printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+=======
+	printf("dim: %i %i %i [%i]\n",hdr->dim[1],hdr->dim[2],hdr->dim[3],hdr->dim[4]);
+	printf("dataType: ");
+	switch(hdr->datatype)
+	{	case UCHAR:     printf("uchar\n"); break;
+        case DT_INT8:   printf("char\n"); break;
+		case SHORT:     printf("short\n"); break;
+		case DT_UINT16: printf("ushort\n"); break;
+		case FLOAT:     printf("float\n"); break;
+		case INT:       printf("int\n"); break;
+		case DT_UINT32: printf("uint\n"); break;
+		case RGB:       printf("rgb\n"); break;
+		case RGBFLOAT:  printf("rgbfloat\n"); break;
+	}
+	printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
 }
 float mean(void)
 {
@@ -1770,12 +1840,15 @@ void resize(int dx, int dy, int dz)
     switch(hdr->datatype)
     {
         case UCHAR:
+        case DT_INT8:
             sz=dx*dy*dz*sizeof(char)+sizeof(nifti_1_header);
             break;
         case SHORT:
+        case DT_UINT16:
             sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
             break;
         case INT:
+        case DT_UINT32:
             sz=dx*dy*dz*sizeof(int)+sizeof(nifti_1_header);
             break;
         case FLOAT:
@@ -1856,13 +1929,23 @@ void strokeMesh(char *path)
     sz.z=max.z-min.z;
     */
 
+<<<<<<< HEAD
+=======
+/*
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
     // transform vertex coordinates to voxel indices
+    printf("offset: %f, %f, %f\n",h->srow_x[3],h->srow_y[3],h->srow_z[3]);
+    printf("pixdim: %f, %f, %f\n",pixdim[0],pixdim[1],pixdim[2]);
     for(i=0;i<np;i++)
     {
         p[i].x=(p[i].x-h->srow_x[3])/pixdim[0];
         p[i].y=(p[i].y-h->srow_y[3])/pixdim[1];
         p[i].z=(p[i].z-h->srow_z[3])/pixdim[2];
     }
+<<<<<<< HEAD
+=======
+*/
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
 
     // scan triangles
     for(l=0;l<nt;l++)
@@ -1952,8 +2035,13 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
     int buffer_length=0;
     int vertices_length=0;
     int faces_length=0;
+<<<<<<< HEAD
     int	i,j,k;
 
+=======
+    int i,j,k;
+    
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
     R[0]=1;
     R[1]=dim[0]+1;
     R[2]=(dim[0]+1)*(dim[1]+1);
@@ -2266,8 +2354,10 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
     char cmd[4096];
 
     // create temporary file name
-    if(getenv("TEMP")==NULL) strcat(filename,"/tmp");
-    else                     strcat(filename,getenv("TEMP"));
+    if(getenv("TEMP")==NULL)
+        strcat(filename,"/tmp");
+    else
+        strcat(filename,getenv("TEMP"));
     strcat(filename,"/nii.XXXXXX");
     result=mkstemp(filename);
     if(result==-1)
@@ -2280,14 +2370,28 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
 
     // uncompress orig.mgz into a temporary .mgh file
     sprintf(cmd,"gunzip -c %s > %s",path,filename);
+<<<<<<< HEAD
     system(cmd);
+=======
+    result=system(cmd);
+    if(result)
+    {
+        printf("ERROR: Can't open file %s\n", path);
+        return 1;
+    }
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
 
     // load temporary file
     loadVolume_Nifti(filename, theHdr, theImg);
 
     // clean up
     sprintf(cmd,"/bin/rm -r %s",filename);
-    system(cmd);
+    result=system(cmd);
+    if(result)
+    {
+        printf("ERROR: Can't remove file %s\n", filename);
+        return 1;
+    }
 
     return 0;
 }
@@ -2507,7 +2611,11 @@ int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
         printf("ERROR: cannot read file: %s\n",path);
         return 1;
     }
+<<<<<<< HEAD
     return 0;
+=======
+	return 0;
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
 }
 int saveVolume(char *path)
 {
@@ -2874,10 +2982,11 @@ void xor(char *path)
 -info                           information: dimensions, data type, pixel size
 -threshold  float,int           threshold(level,direction)
 -volume                         calculate volume
+-new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,offy,offz
 -zigzag                         print volume values in zigzag order
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
 -resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
--strokeMesh str                 set the vertices of the mesh (text format) at input path to value=max+1
+-strokeMesh str                 set the surface of the mesh (text format) at input path to value=max+1; the mesh needs to be in voxel coordinates; (you need to either provide an empty volume or stroke the mesh over the MRI that the segmentation used for mesh extraction had been created on)
 -surfaceNets level,path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
 -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
 */
@@ -2885,6 +2994,7 @@ void xor(char *path)
 #pragma mark -
 int main (int argc, const char * argv[])
 {
+<<<<<<< HEAD
     printf("%s\n",version);
 
     checkEndianness();
@@ -2906,6 +3016,35 @@ int main (int argc, const char * argv[])
         else
         if(strcmp(argv[i],"-o")==0)				// output volume
         {
+=======
+	printf("%s\n",version);
+	
+	checkEndianness();
+	
+	// This command performs different computations and
+	// analyses in volume data.
+	// The operations are carried out in the order they
+	// appear in the arguments passed to the command
+	
+	int		i;
+	int result;
+	
+
+	for(i=1;i<argc;i++)
+	{		
+		if(strcmp(argv[i],"-i")==0)				// input volume
+		{
+			result=loadVolume((char*)argv[++i],&hdr,&img);
+			if(result)
+			{
+			    printf("ERROR: Can't load file\n");
+			    return 1;
+			}
+		}
+		else
+		if(strcmp(argv[i],"-o")==0)				// output volume
+		{
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
             char    *filepath;
             char    *maskpath;
             char    *str= (char*)argv[i+1];
@@ -3138,11 +3277,16 @@ int main (int argc, const char * argv[])
             m.p=(float3D*)calloc(m.np,sizeof(float3D));
             m.t=(int3D*)calloc(m.nt,sizeof(int3D));
             surfaceNets(level,&m,1);	// 2nd pass: store vertices and triangles
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 65618e5e67cc87b60c55334e2ee23f2e4656375e
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
             for(i=0;i<m.np;i++)
-                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+//                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
             for(i=0;i<m.nt;i++)
                 fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
             fclose(f);
@@ -3180,9 +3324,9 @@ int main (int argc, const char * argv[])
             float px,py,pz;
             float ox,oy,oz;
             char *str=(char*)argv[++i];
-            n=sscanf(str,"%i,%i,%i,%f,%f,%f,%f,%f,%f",&dx,&dy,&dz,&px,&py,&pz,&ox,&oy,&oz);
+            n=sscanf(str," %i , %i , %i , %f , %f , %f , %f , %f , %f ",&dx,&dy,&dz,&px,&py,&pz,&ox,&oy,&oz);
             if(n!=9) {
-                printf("ERROR: You have to provide 6 values: dimx, dimy, dimz, pixdimx, pixdimy, pixdimz,offx, offy, offz\n");
+                printf("ERROR: You have to provide 9 values: dimx, dimy, dimz, pixdimx, pixdimy, pixdimz,offx, offy, offz. %i were provided (%s).\n", n, str);
                 return 1;
             }
             newNiiVolume(dx,dy,dz,px,py,pz,ox,oy,oz);
@@ -3194,7 +3338,7 @@ int main (int argc, const char * argv[])
             int   n;
             n=sscanf(argv[++i]," %f ",&val);
             if(n!=1) {
-                printf("ERROR: You have to provide 1 value to multiply\n");
+                printf("ERROR: You have to provide 1 value to multiply. %i were provided.\n", n);
                 return 1;
             }
             mult(val);
