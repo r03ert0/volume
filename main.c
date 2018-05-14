@@ -1239,7 +1239,7 @@ void showNiiHeader(void)
     printf("extents:	%i\n",                       h->extents);           /*!< ++UNUSED++            */  /* int extents;         */
     printf("session_error:	%i\n",                   h->session_error);     /*!< ++UNUSED++            */  /* short session_error; */
     printf("regular:	%c\n",                       h->regular);           /*!< ++UNUSED++            */  /* char regular;        */
-    printf("dim_info:	%c\n",                       h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
+    printf("dim_info:	%i\n",                       (int)h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
 
                                                 /*--- was image_dimension substruct ---*/
     printf("dim:	%i,%i,%i,%i,%i,%i,%i,%i\n",      h->dim[0],h->dim[1],h->dim[2],h->dim[3],h->dim[4],h->dim[5],h->dim[6],h->dim[7]);            /*!< Data array dimensions.*/  /* short dim[8];        */
@@ -1258,8 +1258,8 @@ void showNiiHeader(void)
     printf("scl_slope:	%f\n",                       h->scl_slope );        /*!< Data scaling:	slope.  */  /* float funused1;      */
     printf("scl_inter:	%f\n",                       h->scl_inter );        /*!< Data scaling:	offset. */  /* float funused2;      */
     printf("slice_end:	%i\n",                       h->slice_end);         /*!< Last slice index.     */  /* float funused3;      */
-    printf("slice_code:	%c\n",                       h->slice_code );       /*!< Slice timing order.   */
-    printf("xyzt_units:	%c\n",                       h->xyzt_units );       /*!< Units of pixdim[1..4] */
+    printf("slice_code:	%i\n",                       (int)h->slice_code );       /*!< Slice timing order.   */
+    printf("xyzt_units:	%i\n",                       (int)h->xyzt_units );       /*!< Units of pixdim[1..4] */
     printf("cal_max:	%f\n",                       h->cal_max);           /*!< Max display intensity */  /* float cal_max;       */
     printf("cal_min:	%f\n",                       h->cal_min);           /*!< Min display intensity */  /* float cal_min;       */
     printf("slice_duration:	%f\n",                   h->slice_duration);    /*!< Time for 1 slice.     */  /* float compressed;    */
@@ -1337,7 +1337,7 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"slice_code")==0)
         h->slice_code=val[0];
     else if(strcmp(var,"xyzt_units")==0)
-        h->xyzt_units=val[0];
+        h->xyzt_units=(int)atof(val);
     else if(strcmp(var,"cal_max")==0)
         h->cal_max=(float)atof(val);
     else if(strcmp(var,"cal_min")==0)
@@ -1379,7 +1379,10 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"intent_name")==0)
         strcpy(h->intent_name,val);
     else if(strcmp(var,"magic")==0)
+    {
+        val[3] = (char)0; // force 4th character to null, as per nifti format
         strcpy(h->magic,val);
+    }
 }
 void createNiiHeader(char *txtpath, char *hdrpath)
 {
