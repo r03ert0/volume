@@ -21,6 +21,7 @@ char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 #define kSchematicVolume 5
 #define kTextVolume      6
 #define kINRIMAGEVolume  7
+#define kRawVolume       8
 
 typedef struct {
     float x,y,z;
@@ -2094,7 +2095,7 @@ void sampleMesh(char *mesh,char *result)
 #pragma mark [ Format conversion ]
 int getformatindex(char *path)
 {
-    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt","inr"};
+    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt","inr","bin"};
     int     i,n=sizeof(formats)/sizeof(long); // number of recognised formats
     int     found,index;
     char    *extension;
@@ -2164,6 +2165,13 @@ int getformatindex(char *path)
         index=kINRIMAGEVolume;
         if(verbose)
             printf("Format: INRIMAGE volume\n");
+    }
+    else
+    if(i==8)
+    {
+        index=kRawVolume;
+        if(verbose)
+            printf("Format: Raw data volume\n");
     }
     else
 	{
@@ -2478,6 +2486,50 @@ int saveVolume_Schematic(char *path)
 
     return 0;
 }
+int saveVolume_Raw(char *path)
+{
+	int		i;
+	char	base[512];
+    FILE    *f;
+    int     sz;
+	
+	strcpy(base,path);
+	for(i=strlen(base);i>=0;i--)
+		if(base[i]=='.')
+        {
+			base[i]=(char)0;
+            break;
+        }
+	sprintf(path,"%s.bin",base);
+	printf("Saving data to %s\n",path);
+    f=fopen(path,"w");
+    sz=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
+	switch(hdr->datatype)
+	{	case UCHAR:		fwrite(img,sz,sizeof(char),f); break;
+		case SHORT:		fwrite(img,sz,sizeof(short),f); break;
+		case FLOAT:		fwrite(img,sz,sizeof(float),f); break;
+		case INT:		fwrite(img,sz,sizeof(int),f); break;
+		default:		printf("Unsupported data type\n");
+	}
+    fclose(f);
+
+	sprintf(path,"%s.hdr.txt",base);
+	printf("Saving header to %s\n",path);
+	f=fopen(path,"w");
+	fprintf(f,"dim: %i %i %i\n",hdr->dim[1],hdr->dim[2],hdr->dim[3]);
+	fprintf(f,"dataType: ");
+	switch(hdr->datatype)
+	{	case UCHAR:		fprintf(f,"uchar\n"); break;
+		case SHORT:		fprintf(f,"short\n"); break;
+		case FLOAT:		fprintf(f,"float\n"); break;
+		case INT:		fprintf(f,"int\n"); break;
+		default:		fprintf(f,"Unsupported data type\n");
+	}
+	fprintf(f,"voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+    fclose(f);
+	
+	return 0;
+}
 int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
 	int	err,format;
@@ -2505,6 +2557,10 @@ int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
         case kSchematicVolume:
             err=1;
             printf("ERROR: Cannot read schematic volume yet...");
+            break;
+        case kRawVolume:
+            err=1;
+            printf("ERROR: Cannot read raw data volume yet...");
             break;
 		default:
 			printf("ERROR: Input volume format not recognised\n");
@@ -2543,6 +2599,9 @@ int saveVolume(char *path)
             break;
         case kSchematicVolume:
             saveVolume_Schematic(path);
+            break;
+        case kRawVolume:
+            saveVolume_Raw(path);
             break;
         case kTextVolume:
             printf("ERROR: Cannot save text volume without mask yet...");
@@ -2610,6 +2669,9 @@ int saveMaskedVolume(char *path, char *maskpath)
             break;
         case kTextVolume:
             saveMaskedVolume_Text(path,maskpath);
+            break;
+        case kRawVolume:
+            printf("ERROR: Cannot save Raw volume with mask yet...");
             break;
 		default:
 			printf("ERROR: Output volume format not recognised\n");
@@ -2922,7 +2984,7 @@ int main (int argc, const char * argv[])
             
             if(maskpath==NULL){
                 saveVolume(filepath);
-            }else{
+            } else {
                 saveMaskedVolume(filepath,maskpath);
             }
             
