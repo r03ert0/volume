@@ -7,6 +7,7 @@ char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 #include "Analyze.h"
 #include "MGH.h"
 #include "Nifti.h"
+#include "swap.h"
 #include "math.h"
 #include "limits.h"
 #include <unistd.h>
@@ -46,30 +47,33 @@ void threshold(float value, int direction);
 
 float getValue(int x, int y, int z)
 {
-	float		val;
-	RGBValue	rgb;
+    float		val;
+    RGBValue	rgb;
 
-	if(hdr->datatype==RGB)
-	{
-		rgb=((RGBValue*)img)[z*dim[1]*dim[0]+y*dim[0]+x];
-		val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
-	}
-	else
-	{
-		switch(hdr->datatype)
-		{	case UCHAR: val=((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-			case SHORT: val=        ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-			case INT:	val=          ((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-			case FLOAT:	val=        ((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
-		}
-	}
-	return val;
+    if(hdr->datatype==RGB)
+    {
+        rgb=((RGBValue*)img)[z*dim[1]*dim[0]+y*dim[0]+x];
+        val=((int)rgb.r)>>16|((int)rgb.g)>>8|((int)rgb.b);
+    }
+    else
+    {
+        switch(hdr->datatype)
+        {	case UCHAR:     val= ((unsigned char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+            case DT_INT8:   val=          ((char*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+            case SHORT:     val=         ((short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+            case DT_UINT16: val=((unsigned short*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+            case INT:       val=           ((int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+            case DT_UINT32: val=  ((unsigned int*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+            case FLOAT:     val=         ((float*)img)[z*dim[1]*dim[0]+y*dim[0]+x];	break;
+        }
+    }
+    return val;
 }
 float getValue1(int index)
 {
     float		val;
     RGBValue	rgb;
-    
+
     if(hdr->datatype==RGB)
     {
         rgb=((RGBValue*)img)[index];
@@ -78,10 +82,13 @@ float getValue1(int index)
     else
     {
         switch(hdr->datatype)
-        {	case UCHAR: val=((unsigned char*)img)[index];	break;
-            case SHORT: val=        ((short*)img)[index];	break;
-            case INT:	val=          ((int*)img)[index];	break;
-            case FLOAT:	val=        ((float*)img)[index];	break;
+        {	case UCHAR:     val= ((unsigned char*)img)[index];	break;
+            case DT_INT8:   val=          ((char*)img)[index];	break;
+            case SHORT:     val=         ((short*)img)[index];	break;
+            case DT_UINT16: val=((unsigned short*)img)[index];	break;
+            case INT:	    val=           ((int*)img)[index];	break;
+            case DT_UINT32: val=  ((unsigned int*)img)[index];	break;
+            case FLOAT:     val=         ((float*)img)[index];	break;
         }
     }
     return val;
@@ -99,10 +106,13 @@ float getValue2(int i, AnalyzeHeader *theHdr, char *theImg)
     else
     {
         switch(theHdr->datatype)
-        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-            case SHORT: val=        ((short*)theImg)[i];	break;
-            case INT:	val=          ((int*)theImg)[i];	break;
-            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        {	case UCHAR:     val= ((unsigned char*)theImg)[i];	break;
+            case DT_INT8:  val=           ((char*)theImg)[i];	break;
+            case SHORT:     val=         ((short*)theImg)[i];	break;
+            case DT_UINT16: val=((unsigned short*)theImg)[i];	break;
+            case INT:       val=           ((int*)theImg)[i];	break;
+            case DT_UINT32: val=  ((unsigned int*)theImg)[i];	break;
+            case FLOAT:     val=         ((float*)theImg)[i];	break;
         }
     }
     return val;
@@ -121,10 +131,13 @@ float getValue3(int x, int y, int z, AnalyzeHeader *theHdr, char *theImg)
     else
     {
         switch(theHdr->datatype)
-        {	case UCHAR: val=((unsigned char*)theImg)[i];	break;
-            case SHORT: val=        ((short*)theImg)[i];	break;
-            case INT:	val=          ((int*)theImg)[i];	break;
-            case FLOAT:	val=        ((float*)theImg)[i];	break;
+        {	case UCHAR:     val= ((unsigned char*)theImg)[i];	break;
+            case DT_INT8:   val=          ((char*)theImg)[i];	break;
+            case SHORT:     val=         ((short*)theImg)[i];	break;
+            case DT_UINT16: val=((unsigned short*)theImg)[i];	break;
+            case INT:       val=           ((int*)theImg)[i];	break;
+            case DT_UINT32: val=  ((unsigned int*)theImg)[i];	break;
+            case FLOAT:     val=         ((float*)theImg)[i];	break;
         }
     }
     return val;
@@ -138,28 +151,37 @@ void setValue(float val, int x, int y, int z)
         return;
     }
     switch(hdr->datatype)
-    {   case UCHAR: ((unsigned char*)img)[i]=val; break;
-        case SHORT: ((short*)img)[i]=val;         break;
-        case INT:   ((int*)img)[i]=val;           break;
-        case FLOAT: ((float*)img)[i]=val;         break;
+    {   case UCHAR:     ((unsigned char*)img)[i]=val;  break;
+        case DT_INT8:   ((char*)img)[i]=val;           break;
+        case SHORT:     ((short*)img)[i]=val;          break;
+        case DT_UINT16: ((unsigned short*)img)[i]=val; break;
+        case INT:       ((int*)img)[i]=val;            break;
+        case DT_UINT32: ((unsigned int*)img)[i]=val;   break;
+        case FLOAT:     ((float*)img)[i]=val;          break;
     }
 }
 void setValue1(float val, int i)
 {
     switch(hdr->datatype)
-    {   case UCHAR: ((unsigned char*)img)[i]=val;	break;
-        case SHORT: ((short*)img)[i]=val;			break;
-        case INT:	((int*)img)[i]=val;				break;
-        case FLOAT:	((float*)img)[i]=val;			break;
+    {   case UCHAR: ((unsigned char*)img)[i]=val;      break;
+        case DT_INT8:   ((char*)img)[i]=val;           break;
+        case SHORT:     ((short*)img)[i]=val;          break;
+        case DT_UINT16: ((unsigned short*)img)[i]=val; break;
+        case INT:       ((int*)img)[i]=val;            break;
+        case DT_UINT32: ((unsigned int*)img)[i]=val;   break;
+        case FLOAT:     ((float*)img)[i]=val;          break;
     }
 }
 void setValue2(float val, int i, AnalyzeHeader *theHdr, char *theImg)
 {
     switch(theHdr->datatype)
-    {	case UCHAR: ((unsigned char*)theImg)[i]=val;	break;
-        case SHORT: ((short*)theImg)[i]=val;			break;
-        case INT:	((int*)theImg)[i]=val;				break;
-        case FLOAT:	((float*)theImg)[i]=val;			break;
+    {	case UCHAR:     ((unsigned char*)theImg)[i]=val;    break;
+        case DT_INT8:   ((char*)theImg)[i]=val;             break;
+        case SHORT:     ((short*)theImg)[i]=val;            break;
+        case DT_UINT16: ((unsigned short*)theImg)[i]=val;   break;
+        case INT:       ((int*)theImg)[i]=val;              break;
+        case DT_UINT32: ((unsigned int*)theImg)[i]=val;     break;
+        case FLOAT:     ((float*)theImg)[i]=val;            break;
     }
 }
 #pragma mark -
@@ -171,7 +193,7 @@ void checkEndianness(void)
 {
     char    b[]={1,0,0,0};
     int     num=*(int*)b;
-    
+
     if(num==16777216)
         endianness=kMOTOROLA;
     else
@@ -361,277 +383,277 @@ int connected(int x, int y, int z, int label)
 }
 void largestConnected(void)
 {
-	int	label;
-	int	i,j,k,n;
-	int	max,labelmax;
-	
-	threshold(1,1); // if vox>=1 then vox=1, else vox=0
-	
-	max=0;
-	label=2;
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k)==1)
-	{
-		n=connected(i,j,k,label);
-		if(n>max)
-		{
-			max=n;
-			labelmax=label;
-		}
-		label++;
-	}
-	printf("labelmax=%i\n",labelmax);
+    int	label;
+    int	i,j,k,n;
+    int	max,labelmax;
 
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k)==labelmax)
-		setValue(1,i,j,k);
-	else
-		setValue(0,i,j,k);
+    threshold(1,1); // if vox>=1 then vox=1, else vox=0
+
+    max=0;
+    label=2;
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k)==1)
+    {
+        n=connected(i,j,k,label);
+        if(n>max)
+        {
+            max=n;
+            labelmax=label;
+        }
+        label++;
+    }
+    printf("labelmax=%i\n",labelmax);
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k)==labelmax)
+        setValue(1,i,j,k);
+    else
+        setValue(0,i,j,k);
 }
 void dilate(int r)
 {
-	int		i,j,k;
-	int		a,b,c;
-	char	*tmp=calloc(dim[0]*dim[1]*dim[2],1);
-	
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-		tmp[k*dim[1]*dim[0]+j*dim[0]+i]=(getValue(i,j,k)>0);
-	
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k))
-	{
-		for(a=-r;a<=r;a++)
-		for(b=-r;b<=r;b++)
-		for(c=-r;c<=r;c++)
-		if(	i+a>=0 && i+a<dim[0] &&
-			j+b>=0 && j+b<dim[1] &&
-			k+c>=0 && k+c<dim[2])
-		if(a*a+b*b+c*c<=r*r)
-		if(getValue(i+a,j+b,k+c)<1)
-			tmp[(k+c)*dim[1]*dim[0]+(j+b)*dim[0]+(i+a)]=1;
-	}
+    int		i,j,k;
+    int		a,b,c;
+    char	*tmp=calloc(dim[0]*dim[1]*dim[2],1);
 
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k)<1 && tmp[k*dim[1]*dim[0]+j*dim[0]+i]>0)
-		setValue(1,i,j,k);
-	free(tmp);
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+        tmp[k*dim[1]*dim[0]+j*dim[0]+i]=(getValue(i,j,k)>0);
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k))
+    {
+        for(a=-r;a<=r;a++)
+        for(b=-r;b<=r;b++)
+        for(c=-r;c<=r;c++)
+        if(	i+a>=0 && i+a<dim[0] &&
+            j+b>=0 && j+b<dim[1] &&
+            k+c>=0 && k+c<dim[2])
+        if(a*a+b*b+c*c<=r*r)
+        if(getValue(i+a,j+b,k+c)<1)
+            tmp[(k+c)*dim[1]*dim[0]+(j+b)*dim[0]+(i+a)]=1;
+    }
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k)<1 && tmp[k*dim[1]*dim[0]+j*dim[0]+i]>0)
+        setValue(1,i,j,k);
+    free(tmp);
 }
 void erode(int r)
 {
     printf("[erode]\n");
-	int		i,j,k;
-	int		a,b,c;
-	char	*tmp=calloc(dim[0]*dim[1]*dim[2],1);
-	
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-		tmp[k*dim[1]*dim[0]+j*dim[0]+i]=(getValue(i,j,k)>0);
-	
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k)<1)
-	{
-		for(a=-r;a<=r;a++)
-		for(b=-r;b<=r;b++)
-		for(c=-r;c<=r;c++)
-		if(	i+a>=0 && i+a<dim[0] &&
-			j+b>=0 && j+b<dim[1] &&
-			k+c>=0 && k+c<dim[2])
-		if(a*a+b*b+c*c<=r*r)
-		if(getValue(i+a,j+b,k+c)>0)
-			tmp[(k+c)*dim[1]*dim[0]+(j+b)*dim[0]+(i+a)]=0;
-	}
+    int		i,j,k;
+    int		a,b,c;
+    char	*tmp=calloc(dim[0]*dim[1]*dim[2],1);
 
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k)>0 && tmp[k*dim[1]*dim[0]+j*dim[0]+i]==0)
-		setValue(0,i,j,k);
-	free(tmp);
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+        tmp[k*dim[1]*dim[0]+j*dim[0]+i]=(getValue(i,j,k)>0);
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k)<1)
+    {
+        for(a=-r;a<=r;a++)
+        for(b=-r;b<=r;b++)
+        for(c=-r;c<=r;c++)
+        if(	i+a>=0 && i+a<dim[0] &&
+            j+b>=0 && j+b<dim[1] &&
+            k+c>=0 && k+c<dim[2])
+        if(a*a+b*b+c*c<=r*r)
+        if(getValue(i+a,j+b,k+c)>0)
+            tmp[(k+c)*dim[1]*dim[0]+(j+b)*dim[0]+(i+a)]=0;
+    }
+
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k)>0 && tmp[k*dim[1]*dim[0]+j*dim[0]+i]==0)
+        setValue(0,i,j,k);
+    free(tmp);
 }
 
 float max(void)
 {
-	int		i,j,k;
-	float	val,max;
-	
-	max=getValue(0,0,0);
-	for(i=0;i<dim[0];i++)
-		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++)
-			{
-				val=getValue(i,j,k);
-				if(val>max)
-					max=val;
-			}
-	return max;
+    int		i,j,k;
+    float	val,max;
+
+    max=getValue(0,0,0);
+    for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++)
+            {
+                val=getValue(i,j,k);
+                if(val>max)
+                    max=val;
+            }
+    return max;
 }
 float min(void)
 {
-	int		i,j,k;
-	float	val,min;
-	
-	min=getValue(0,0,0);
-	for(i=0;i<dim[0];i++)
-		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++)
-			{
-				val=getValue(i,j,k);
-				if(val<min)
-					min=val;
-			}
-	return min;
+    int		i,j,k;
+    float	val,min;
+
+    min=getValue(0,0,0);
+    for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++)
+            {
+                val=getValue(i,j,k);
+                if(val<min)
+                    min=val;
+            }
+    return min;
 }
 
 void compress_dct_1d(float *in, float *out, int N)
 {
-	int n,k;
+    int n,k;
 
-	for(k=0;k<N;k++)
-	{
-		float z=0;
-		for(n=0;n<N;n++)
-			z+=in[n]*cos(pi*(2*n+1)*k/(float)(2*N));
-		out[k]=z*((k==0)?1/sqrt(N):sqrt(2/(float)N));
-	}
+    for(k=0;k<N;k++)
+    {
+        float z=0;
+        for(n=0;n<N;n++)
+            z+=in[n]*cos(pi*(2*n+1)*k/(float)(2*N));
+        out[k]=z*((k==0)?1/sqrt(N):sqrt(2/(float)N));
+    }
 }
 void compress_idct_1d(float *in, float *out, int N)
 {
-	int n,k;
+    int n,k;
 
-	for(n=0;n<N;n++)
-	{
-		float z=0;
-		for(k=0;k<N;k++)
-			z+=((k==0)?1/sqrt(N):sqrt(2/(float)N))*in[k]*cos(pi*(2*n+1)*k/(float)(2*N));
-		out[n]=z;
-	}
+    for(n=0;n<N;n++)
+    {
+        float z=0;
+        for(k=0;k<N;k++)
+            z+=((k==0)?1/sqrt(N):sqrt(2/(float)N))*in[k]*cos(pi*(2*n+1)*k/(float)(2*N));
+        out[n]=z;
+    }
 }
 void compress_dct(float *vol,float *coeff,int *d)
 {
-	int i,j,k;
-	float *in,*out;
+    int i,j,k;
+    float *in,*out;
     int max;
-    
+
     max=(d[0]>d[1])?d[0]:d[1];
     max=(d[2]>max)?d[2]:max;
     in=(float*)calloc(max,sizeof(float));
     out=(float*)calloc(max,sizeof(float));
-	
+
     for(i=0;i<d[0];i++)
-	for(j=0;j<d[1];j++)
-	{
-		for(k=0;k<d[2];k++)
-			in[k]=vol[k*d[1]*d[0]+j*d[0]+i];
-		compress_dct_1d(in,out,d[2]);
-		for(k=0;k<d[2];k++)
-			coeff[k*d[1]*d[0]+j*d[0]+i]=out[k];
-	}
+    for(j=0;j<d[1];j++)
+    {
+        for(k=0;k<d[2];k++)
+            in[k]=vol[k*d[1]*d[0]+j*d[0]+i];
+        compress_dct_1d(in,out,d[2]);
+        for(k=0;k<d[2];k++)
+            coeff[k*d[1]*d[0]+j*d[0]+i]=out[k];
+    }
 
-	for(j=0;j<d[1];j++)
-	for(k=0;k<d[2];k++)
-	{
-		for(i=0;i<d[0];i++)
-			in[i]=coeff[k*d[1]*d[0]+j*d[0]+i];
-		compress_dct_1d(in,out,d[0]);
-		for(i=0;i<d[0];i++)
-			coeff[k*d[1]*d[0]+j*d[0]+i]=out[i];
-	}
+    for(j=0;j<d[1];j++)
+    for(k=0;k<d[2];k++)
+    {
+        for(i=0;i<d[0];i++)
+            in[i]=coeff[k*d[1]*d[0]+j*d[0]+i];
+        compress_dct_1d(in,out,d[0]);
+        for(i=0;i<d[0];i++)
+            coeff[k*d[1]*d[0]+j*d[0]+i]=out[i];
+    }
 
-	for(k=0;k<d[2];k++)
-	for(i=0;i<d[0];i++)
-	{
-		for(j=0;j<d[1];j++)
-			in[j]=coeff[k*d[1]*d[0]+j*d[0]+i];
-		compress_dct_1d(in, out,d[1]);
-		for(j=0;j<d[1];j++)
-			coeff[k*d[1]*d[0]+j*d[0]+i]=out[j];
-	}
-    
+    for(k=0;k<d[2];k++)
+    for(i=0;i<d[0];i++)
+    {
+        for(j=0;j<d[1];j++)
+            in[j]=coeff[k*d[1]*d[0]+j*d[0]+i];
+        compress_dct_1d(in, out,d[1]);
+        for(j=0;j<d[1];j++)
+            coeff[k*d[1]*d[0]+j*d[0]+i]=out[j];
+    }
+
     free(in);
     free(out);
 }
 void compress_idct(float *vol,float *coeff,int *d)
 {
-	int i,j,k;
-	float *in,*out;
+    int i,j,k;
+    float *in,*out;
     int max;
-    
+
     max=(d[0]>d[1])?d[0]:d[1];
     max=(d[2]>max)?d[2]:max;
     in=(float*)calloc(max,sizeof(float));
     out=(float*)calloc(max,sizeof(float));
-	
-	for(i=0;i<d[0];i++)
-	for(j=0;j<d[1];j++)
-	{
-		for(k=0;k<d[2];k++)
-			in[k]=vol[k*d[1]*d[0]+j*d[0]+i];
-		compress_idct_1d(in, out,d[2]);
-		for(k=0;k<d[2];k++)
-			coeff[k*d[1]*d[0]+j*d[0]+i]=out[k];
-	}
 
-	for(j=0;j<d[1];j++)
-	for(k=0;k<d[2];k++)
-	{
-		for(i=0;i<d[0];i++)
-			in[i]=coeff[k*d[1]*d[0]+j*d[0]+i];
-		compress_idct_1d(in, out,d[0]);
-		for(i=0;i<d[0];i++)
-			coeff[k*d[1]*d[0]+j*d[0]+i]=out[i];
-	}
+    for(i=0;i<d[0];i++)
+    for(j=0;j<d[1];j++)
+    {
+        for(k=0;k<d[2];k++)
+            in[k]=vol[k*d[1]*d[0]+j*d[0]+i];
+        compress_idct_1d(in, out,d[2]);
+        for(k=0;k<d[2];k++)
+            coeff[k*d[1]*d[0]+j*d[0]+i]=out[k];
+    }
 
-	for(k=0;k<d[2];k++)
-	for(i=0;i<d[0];i++)
-	{
-		for(j=0;j<d[1];j++)
-			in[j]=coeff[k*d[1]*d[0]+j*d[0]+i];
-		compress_idct_1d(in, out,d[1]);
-		for(j=0;j<d[1];j++)
-			coeff[k*d[1]*d[0]+j*d[0]+i]=out[j];
-	}
+    for(j=0;j<d[1];j++)
+    for(k=0;k<d[2];k++)
+    {
+        for(i=0;i<d[0];i++)
+            in[i]=coeff[k*d[1]*d[0]+j*d[0]+i];
+        compress_idct_1d(in, out,d[0]);
+        for(i=0;i<d[0];i++)
+            coeff[k*d[1]*d[0]+j*d[0]+i]=out[i];
+    }
+
+    for(k=0;k<d[2];k++)
+    for(i=0;i<d[0];i++)
+    {
+        for(j=0;j<d[1];j++)
+            in[j]=coeff[k*d[1]*d[0]+j*d[0]+i];
+        compress_idct_1d(in, out,d[1]);
+        for(j=0;j<d[1];j++)
+            coeff[k*d[1]*d[0]+j*d[0]+i]=out[j];
+    }
 
     free(in);
     free(out);
 }
 void compress(float rate, char *coefffile)
 {
-	// based on code by Emil Mikulic at http://unix4lyfe.org/dct
-	float	*tmp,*coeff;
-	int		i,j,k,n=0;
-	
+    // based on code by Emil Mikulic at http://unix4lyfe.org/dct
+    float	*tmp,*coeff;
+    int		i,j,k,n=0;
+
     /*
     float   x[]={1,2,1,0,1,2,3,1},y[8];
     coeff=(float*)calloc(8,sizeof(float));
     compress_dct_1d(x,coeff,8);
     compress_idct_1d(coeff,y,8);
     */
-    
+
     // change dimensions to multiple of 8
-	tmp=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
-	coeff=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-		tmp[k*dim[1]*dim[0]+j*dim[0]+i]=getValue(i,j,k);
-	
-	// dct
-	compress_dct(tmp,coeff,dim);
-	
-	// compress at rate
+    tmp=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+    coeff=(float*)calloc(dim[0]*dim[1]*dim[2],sizeof(float));
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+        tmp[k*dim[1]*dim[0]+j*dim[0]+i]=getValue(i,j,k);
+
+    // dct
+    compress_dct(tmp,coeff,dim);
+
+    // compress at rate
     for(i=0;i<dim[0];i++)
     for(j=0;j<dim[1];j++)
     for(k=0;k<dim[2];k++)
@@ -642,19 +664,19 @@ void compress(float rate, char *coefffile)
             n++;
     }
     printf("%i non-zero coefficients\n",n);
-    
-	// idct
-	compress_idct(coeff,tmp,dim);
-	
-	// save coefficients at coeff
-	
-	// change volume to compressed version
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-		setValue(tmp[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
-	
-	free(tmp);
+
+    // idct
+    compress_idct(coeff,tmp,dim);
+
+    // save coefficients at coeff
+
+    // change volume to compressed version
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+        setValue(tmp[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
+
+    free(tmp);
     free(coeff);
 }
 int convert(char *dtype)
@@ -662,7 +684,7 @@ int convert(char *dtype)
     float           min,max,val;
     int             i,j,k,sz;
     char            *addr0,*img0;
-    
+
     // find min max
     min=max=getValue(0,0,0);
     for(i=0;i<dim[0];i++)
@@ -710,7 +732,7 @@ int convert(char *dtype)
                 val=(val-min)/(max-min);
                 val=SHRT_MIN*(1-val)+SHRT_MAX*val;
             }
-            
+        
             ((short*)img0)[k*dim[1]*dim[0]+j*dim[0]+i]=(short)val;
         }
         hdr->datatype=SHORT;
@@ -756,34 +778,34 @@ int convert(char *dtype)
         printf("ERROR: Unknown format %s. Select among uchar, short, int or float\n",dtype);
         return 1;
     }
-    
+
     addr0=calloc(dim[0]*dim[1]*dim[2]*sz+sizeof(AnalyzeHeader),sizeof(char));
     memcpy(addr0,(char*)hdr,sizeof(AnalyzeHeader));
     memcpy(addr0+sizeof(AnalyzeHeader),img0,dim[0]*dim[1]*dim[2]*sz);
-    
+
     free((char*)hdr);
     free(img0);
     hdr=(AnalyzeHeader*)addr0;
     img=(char*)((char*)hdr+sizeof(AnalyzeHeader));
-    
+
     return 0;
 }
 void hist(int nbins)
 {
-	int		i,j,k;
-	float	mi,ma;
-	float	*hist;
-	
-	hist=(float*)calloc(nbins,sizeof(float));
-	
-	mi=min();
-	ma=max();
-	printf("nbins %d\n ",nbins);
-	for(i=0;i<dim[0];i++)
-		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++){
+    int		i,j,k;
+    float	mi,ma;
+    float	*hist;
+
+    hist=(float*)calloc(nbins,sizeof(float));
+
+    mi=min();
+    ma=max();
+    printf("nbins %d\n ",nbins);
+    for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++){
                 float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
-				hist[(int)index]++;
+                hist[(int)index]++;
                 //printf("%f ",index);
             }
     float delta = (ma-mi)/nbins;
@@ -791,187 +813,190 @@ void hist(int nbins)
     printf("min %f max %f \n",mi,ma);
     printf("x: ");
     for(i=0;i<nbins;i++)
-	{
+    {
         printf("%f ",mi+delta*i);
     }
     printf("\n");
     printf("y: ");
-	for(i=0;i<nbins;i++)
-	{
-		printf("%g",hist[i]);
-		if(i<nbins-1)
-			printf(" ");
-	}
-	printf("\n");
-	free(hist);
+    for(i=0;i<nbins;i++)
+    {
+        printf("%g",hist[i]);
+        if(i<nbins-1)
+            printf(" ");
+    }
+    printf("\n");
+    free(hist);
 }
 void info(void)
 {
-	printf("dim: %i %i %i [%i]\n",hdr->dim[1],hdr->dim[2],hdr->dim[3],hdr->dim[4]);
-	printf("dataType: ");
-	switch(hdr->datatype)
-	{	case UCHAR:		printf("uchar\n"); break;
-		case SHORT:		printf("short\n"); break;
-		case FLOAT:		printf("float\n"); break;
-		case INT:		printf("int\n"); break;
-		case RGB:		printf("rgb\n"); break;
-		case RGBFLOAT:	printf("rgbfloat\n"); break;
-	}
-	printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+    printf("dim: %i %i %i [%i]\n",hdr->dim[1],hdr->dim[2],hdr->dim[3],hdr->dim[4]);
+    printf("dataType: ");
+    switch(hdr->datatype)
+    {	case UCHAR:     printf("uchar\n"); break;
+        case DT_INT8:   printf("char\n"); break;
+        case SHORT:     printf("short\n"); break;
+        case DT_UINT16: printf("ushort\n"); break;
+        case FLOAT:     printf("float\n"); break;
+        case INT:       printf("int\n"); break;
+        case DT_UINT32: printf("uint\n"); break;
+        case RGB:       printf("rgb\n"); break;
+        case RGBFLOAT:  printf("rgbfloat\n"); break;
+    }
+    printf("voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
 }
 float mean(void)
 {
-	int		i,j,k;
-	float	sum=0;
+    int		i,j,k;
+    float	sum=0;
 
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-		sum+=getValue(i,j,k);
-	return sum/(float)(dim[0]*dim[1]*dim[2]);
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+        sum+=getValue(i,j,k);
+    return sum/(float)(dim[0]*dim[1]*dim[2]);
 }
 float kurtosis(void) //not done
 {
-	int		i,j,k;
-	float	sum=0;
-    
-	for(i=0;i<dim[0];i++)
+    int		i,j,k;
+    float	sum=0;
+
+    for(i=0;i<dim[0];i++)
         for(j=0;j<dim[1];j++)
             for(k=0;k<dim[2];k++)
                 sum+=getValue(i,j,k);
-	return sum/(float)(dim[0]*dim[1]*dim[2]);
+    return sum/(float)(dim[0]*dim[1]*dim[2]);
 }
 
 float std(void)
 {
-	int		i,j,k;
-	float	val;
-	float	s0=dim[0]*dim[1]*dim[2];
-	float	s1=0;
-	float	s2=0;
+    int		i,j,k;
+    float	val;
+    float	s0=dim[0]*dim[1]*dim[2];
+    float	s1=0;
+    float	s2=0;
 
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	{
-		val=getValue(i,j,k);
-		s1+=val;
-		s2+=val*val;
-	}
-	return sqrt((s0*s2-s1*s1)/(s0*(s0-1)));
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        val=getValue(i,j,k);
+        s1+=val;
+        s2+=val*val;
+    }
+    return sqrt((s0*s2-s1*s1)/(s0*(s0-1)));
 }
 void threshold(float value, int direction)
 {
-	int		i,j,k;
-	float	val;
+    int		i,j,k;
+    float	val;
 
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	{
-		val=getValue(i,j,k);
-		if((val>=value && direction==1)||(val<=value && direction==0))
-			setValue(1,i,j,k);
-		else
-			setValue(0,i,j,k);
-	}
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        val=getValue(i,j,k);
+        if((val>=value && direction==1)||(val<=value && direction==0))
+            setValue(1,i,j,k);
+        else
+            setValue(0,i,j,k);
+    }
 }
 void tiff(char *path, float *m, int W, int H, char *cmapindex)
 {
-	FILE	*f;
-	int		i,n,S;
-	unsigned char	hdr[]={
-		0x4d,0x4d,
-		0x00,0x2a,
-		0x00,0x00,0x00,0x08,
-		0x00,0x0d,														// declare 13 fields
-		0x01,0xfe, 0x00,0x04, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0x00,
-		0x01,0x00, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x40,0x00,0x00,	// image width
-		0x01,0x01, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x20,0x00,0x00,	// image length
-		0x01,0x02, 0x00,0x03, 0x00,0x00,0x00,0x03, 0x00,0x00,0x00,0xaa,	// bits per sample [addr: aa]
-		0x01,0x03, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x01,0x00,0x00,	// compression
-		0x01,0x06, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x02,0x00,0x00,	// photometric interpretation
-		0x01,0x11, 0x00,0x04, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0xc0,	// strip offsets [addr:0xc0]
-		0x01,0x15, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x03,0x00,0x00,	// samples per pixel
-		0x01,0x16, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x20,0x00,0x00,	// rows per strip
-		0x01,0x17, 0x00,0x04, 0x00,0x00,0x00,0x01, 0x00,0x00,0x18,0x00,	// strip byte counts
-		0x01,0x1a, 0x00,0x05, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0xb0,	// x resolution [addr: b0]
-		0x01,0x1b, 0x00,0x05, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0xb8,	// y resolution [addr: b8]
-		0x01,0x28, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x02,0x00,0x00,	// resolution unit
-		0x00,0x00,0x00,0x00,
-		0x00,0x08, 0x00,0x08, 0x00,0x08,								// [addr 0xAA] bits per sample: 8,8,8
-		0x00,0x0a,0xfc,0x80, 0x00,0x00,0x27,0x10,						// [addr 0xB0] x resolution 72
-		0x00,0x0a,0xfc,0x80, 0x00,0x00,0x27,0x10,						// [addr 0xB8] y resolution 72
-	};
-	// image width
-	hdr[31]=((unsigned char *)&W)[0];
-	hdr[30]=((unsigned char *)&W)[1];
-	hdr[33]=((unsigned char *)&W)[2];
-	hdr[32]=((unsigned char *)&W)[3];
-	
-	// image length
-	hdr[43]=((unsigned char *)&H)[0];
-	hdr[42]=((unsigned char *)&H)[1];
-	hdr[45]=((unsigned char *)&H)[2];
-	hdr[44]=((unsigned char *)&H)[3];
-	
-	// rows per strip = image length
-	hdr[115]=((unsigned char *)&H)[0];
-	hdr[114]=((unsigned char *)&H)[1];
-	hdr[117]=((unsigned char *)&H)[2];
-	hdr[116]=((unsigned char *)&H)[3];
-	
-	// strip byte counts = image length * image width * 3
-	S=W*H*3;
-	hdr[129]=((unsigned char *)&S)[0];
-	hdr[128]=((unsigned char *)&S)[1];
-	hdr[127]=((unsigned char *)&S)[2];
-	hdr[126]=((unsigned char *)&S)[3];
-	
-	
-	// make a colour map
-	unsigned char cmap[256][3];
-	cmap[0][0]=cmap[0][1]=cmap[0][2]=0;
-	srand(0);
-	for(i=1;i<256;i++)
-	{
-		cmap[i][0]=rand()%256;
-		cmap[i][1]=rand()%256;
-		cmap[i][2]=rand()%256;
-	}
-	
-	f=fopen(path,"w");
-	n=sizeof(hdr);
-	for(i=0;i<n;i++)
-		fputc(hdr[i],f);
-	for(i=0;i<W*H;i++)
-	{
-		if(strcmp(cmapindex,"grey")==0)
-		{
-			fputc((int)(m[i]),f);
-			fputc((int)(m[i]),f);
-			fputc((int)(m[i]),f);
-		}
-		else
-		if(strcmp(cmapindex,"lut")==0)
-		{
-			fputc(cmap[(int)(m[i])][0],f);
-			fputc(cmap[(int)(m[i])][1],f);
-			fputc(cmap[(int)(m[i])][2],f);
-		}
+    FILE	*f;
+    int		i,n,S;
+    unsigned char	hdr[]={
+        0x4d,0x4d,
+        0x00,0x2a,
+        0x00,0x00,0x00,0x08,
+        0x00,0x0d,														// declare 13 fields
+        0x01,0xfe, 0x00,0x04, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0x00,
+        0x01,0x00, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x40,0x00,0x00,	// image width
+        0x01,0x01, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x20,0x00,0x00,	// image length
+        0x01,0x02, 0x00,0x03, 0x00,0x00,0x00,0x03, 0x00,0x00,0x00,0xaa,	// bits per sample [addr: aa]
+        0x01,0x03, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x01,0x00,0x00,	// compression
+        0x01,0x06, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x02,0x00,0x00,	// photometric interpretation
+        0x01,0x11, 0x00,0x04, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0xc0,	// strip offsets [addr:0xc0]
+        0x01,0x15, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x03,0x00,0x00,	// samples per pixel
+        0x01,0x16, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x20,0x00,0x00,	// rows per strip
+        0x01,0x17, 0x00,0x04, 0x00,0x00,0x00,0x01, 0x00,0x00,0x18,0x00,	// strip byte counts
+        0x01,0x1a, 0x00,0x05, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0xb0,	// x resolution [addr: b0]
+        0x01,0x1b, 0x00,0x05, 0x00,0x00,0x00,0x01, 0x00,0x00,0x00,0xb8,	// y resolution [addr: b8]
+        0x01,0x28, 0x00,0x03, 0x00,0x00,0x00,0x01, 0x00,0x02,0x00,0x00,	// resolution unit
+        0x00,0x00,0x00,0x00,
+        0x00,0x08, 0x00,0x08, 0x00,0x08,								// [addr 0xAA] bits per sample: 8,8,8
+        0x00,0x0a,0xfc,0x80, 0x00,0x00,0x27,0x10,						// [addr 0xB0] x resolution 72
+        0x00,0x0a,0xfc,0x80, 0x00,0x00,0x27,0x10,						// [addr 0xB8] y resolution 72
+    };
+    // image width
+    hdr[31]=((unsigned char *)&W)[0];
+    hdr[30]=((unsigned char *)&W)[1];
+    hdr[33]=((unsigned char *)&W)[2];
+    hdr[32]=((unsigned char *)&W)[3];
 
-	}
-	fclose(f);
-	
+    // image length
+    hdr[43]=((unsigned char *)&H)[0];
+    hdr[42]=((unsigned char *)&H)[1];
+    hdr[45]=((unsigned char *)&H)[2];
+    hdr[44]=((unsigned char *)&H)[3];
+
+    // rows per strip = image length
+    hdr[115]=((unsigned char *)&H)[0];
+    hdr[114]=((unsigned char *)&H)[1];
+    hdr[117]=((unsigned char *)&H)[2];
+    hdr[116]=((unsigned char *)&H)[3];
+
+    // strip byte counts = image length * image width * 3
+    S=W*H*3;
+    hdr[129]=((unsigned char *)&S)[0];
+    hdr[128]=((unsigned char *)&S)[1];
+    hdr[127]=((unsigned char *)&S)[2];
+    hdr[126]=((unsigned char *)&S)[3];
+
+
+    // make a colour map
+    unsigned char cmap[256][3];
+    cmap[0][0]=cmap[0][1]=cmap[0][2]=0;
+    srand(0);
+    for(i=1;i<256;i++)
+    {
+        cmap[i][0]=rand()%256;
+        cmap[i][1]=rand()%256;
+        cmap[i][2]=rand()%256;
+    }
+
+    f=fopen(path,"w");
+    n=sizeof(hdr);
+    for(i=0;i<n;i++)
+        fputc(hdr[i],f);
+    for(i=0;i<W*H;i++)
+    {
+        if(strcmp(cmapindex,"grey")==0)
+        {
+            fputc((int)(m[i]),f);
+            fputc((int)(m[i]),f);
+            fputc((int)(m[i]),f);
+        }
+        else
+        if(strcmp(cmapindex,"lut")==0)
+        {
+            fputc(cmap[(int)(m[i])][0],f);
+            fputc(cmap[(int)(m[i])][1],f);
+            fputc(cmap[(int)(m[i])][2],f);
+        }
+
+    }
+    fclose(f);
+
 }
 void drawSlice(char *path, char *cmap, char *ori, float slice)
 {
     float	*m;
     int     x,y,z;
     float   val,min,max;
-    
+
     int slicenb;
-    
+
     if (floorf(slice) == slice)
     { //slice is an integer (considered as slice number)
         slicenb=1;
@@ -980,7 +1005,7 @@ void drawSlice(char *path, char *cmap, char *ori, float slice)
     {
         slicenb=0;	//slice is a float (considered as percentage)
     }
-    
+
     switch(ori[0])
     {
         case 'x':
@@ -1042,163 +1067,161 @@ void drawSlice(char *path, char *cmap, char *ori, float slice)
 }
 float volume(void)
 {
-	int		i,j,k;
-	int		nv;
-	float	vvol,vol;
-	
-	vvol=hdr->pixdim[1]*hdr->pixdim[2]*hdr->pixdim[3];
-	nv=0;
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	if(getValue(i,j,k))
-		nv++;
-	
-	vol=fabs(nv*vvol);
-	
-	return vol;
+    int		i,j,k;
+    int		nv;
+    float	vvol,vol;
+
+    vvol=hdr->pixdim[1]*hdr->pixdim[2]*hdr->pixdim[3];
+    nv=0;
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    if(getValue(i,j,k))
+        nv++;
+
+    vol=fabs(nv*vvol);
+
+    return vol;
 }
 void decompose(char *basename)
 {
-	int				i,j,k;
-	int				x,y,z;
-	float			val;
-	AnalyzeHeader	*hdr;
-	char			*addr,*img;
-	char			path[1024];
-	char			sizeof_hdr[4]={92,1,0,0};
-	
-	// create empty UCHAR volume
-	addr=calloc(dim[0]*dim[1]*dim[2]+sizeof(AnalyzeHeader),sizeof(char));
-	hdr=(AnalyzeHeader*)addr;
-	img=addr+sizeof(AnalyzeHeader);
-	hdr->sizeof_hdr=*(int*)sizeof_hdr;
-	hdr->datatype=UCHAR;
-	hdr->dim[0]=3;
-	hdr->dim[1]=dim[0];
-	hdr->dim[2]=dim[1];
-	hdr->dim[3]=dim[2];
-	hdr->pixdim[1]=4;
-	hdr->pixdim[2]=4;
-	hdr->pixdim[3]=4;
-	
-	// decompose volume
-	for(i=0;i<dim[0];i++)
-	for(j=0;j<dim[1];j++)
-	for(k=0;k<dim[2];k++)
-	{
-		val=getValue(i,j,k);
-		if(val!=0)
-		{
-			for(x=0;x<dim[0];x++)
-			for(y=0;y<dim[1];y++)
-			for(z=0;z<dim[2];z++)
-			if(getValue(x,y,z)==val)
-			{
-				img[z*dim[1]*dim[0]+y*dim[0]+x]=1;
-				setValue(0,x,y,z);
-			}
-			else
-				img[z*dim[1]*dim[0]+y*dim[0]+x]=0;
+    int				i,j,k;
+    int				x,y,z;
+    float			val;
+    AnalyzeHeader	*hdr;
+    char			*addr,*img;
+    char			path[1024];
+    char			sizeof_hdr[4]={92,1,0,0};
 
-			sprintf(path,"%s_%g.hdr",basename,val);
-			Analyze_save_hdr(path,*hdr);
-			sprintf(path,"%s_%g.img",basename,val);
-			Analyze_save_img(path,*hdr,img);
-		}
-	}
+    // create empty UCHAR volume
+    addr=calloc(dim[0]*dim[1]*dim[2]+sizeof(AnalyzeHeader),sizeof(char));
+    hdr=(AnalyzeHeader*)addr;
+    img=addr+sizeof(AnalyzeHeader);
+    hdr->sizeof_hdr=*(int*)sizeof_hdr;
+    hdr->datatype=UCHAR;
+    hdr->dim[0]=3;
+    hdr->dim[1]=dim[0];
+    hdr->dim[2]=dim[1];
+    hdr->dim[3]=dim[2];
+    hdr->pixdim[1]=4;
+    hdr->pixdim[2]=4;
+    hdr->pixdim[3]=4;
+
+    // decompose volume
+    for(i=0;i<dim[0];i++)
+    for(j=0;j<dim[1];j++)
+    for(k=0;k<dim[2];k++)
+    {
+        val=getValue(i,j,k);
+        if(val!=0)
+        {
+            for(x=0;x<dim[0];x++)
+            for(y=0;y<dim[1];y++)
+            for(z=0;z<dim[2];z++)
+            if(getValue(x,y,z)==val)
+            {
+                img[z*dim[1]*dim[0]+y*dim[0]+x]=1;
+                setValue(0,x,y,z);
+            }
+            else
+                img[z*dim[1]*dim[0]+y*dim[0]+x]=0;
+
+            sprintf(path,"%s_%g.hdr",basename,val);
+            Analyze_save_hdr(path,*hdr);
+            sprintf(path,"%s_%g.img",basename,val);
+            Analyze_save_img(path,*hdr,img);
+        }
+    }
 }
 void matchHistogram(char *volpath)
 {
-	int				i,j,n,n0;
-	int				sz;
-	int				swapped;
-	char			*addr;
-	AnalyzeHeader	*hdr0;
-	char			*img0;
-	int				*hist,*hist0;
-	float			*cumsum0,cumsum,prev;
-	float			val;
-	float			min,min0;
-	float			max,max0;
-	float			d,t,*trans;
-	
-	// load target volume
-	Analyze_load(volpath,&addr,&sz,&swapped);
-	hdr0=(AnalyzeHeader*)addr;
-	img0=(char*)(addr+sizeof(AnalyzeHeader));
-	// find max grey value in target volume
-	n0=hdr0->dim[1]*hdr0->dim[2]*hdr0->dim[3];
-	min0=max0=getValue2(0,hdr0,img0);
-	for(i=0;i<n0;i++)
-	{
-		val=getValue2(i,hdr0,img0);
-		if(val>max0)
-			max0=val;
-		if(val<min0)
-			min0=val;
-	}
-	// compute histogram for target volume
-	hist0=(int*)calloc(max0-min0+1,sizeof(int));
-	for(i=0;i<n0;i++)
-		hist0[(int)(getValue2(i,hdr0,img0)-min0)]++;
-	// compute cummulative histogram for target colume
-	cumsum0=(float*)calloc(max0-min0+1,sizeof(float));
-	cumsum0[0]=hist0[0];///(float)n0;
-	for(i=1;i<max0-min0+1;i++)
-		cumsum0[i]=cumsum0[i-1]+hist0[i];
-	for(i=0;i<max0-min0+1;i++)
-		cumsum0[i]/=(float)n0;
-	
-	// find max grey value in source volume
-	n=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
-	min=max=getValue2(0,hdr,img);
-	for(i=0;i<n;i++)
-	{
-		val=getValue2(i,hdr,img);
-		if(val>max)
-			max=val;
-		if(val<min)
-			min=val;
-	}
-	// compute histogram for source volume
-	hist=(int*)calloc(max-min+1,sizeof(int));
-	for(i=0;i<n;i++)
-		hist[(int)(getValue2(i,hdr,img)-min)]++;
-	
-	// compute histogram matching transformation
-	trans=(float*)calloc(max,sizeof(float));
-	cumsum=0;
-	prev=0;
-	j=0;
-	for(i=0;i<max-min+1;i++)
-	{
-		cumsum+=hist[i];
-		
-		// find grey level in target volume where cumsum0==cumsum
-		while(cumsum0[j]<cumsum/(float)n)
-		{
-			prev=cumsum0[j];
-			j++;
-		}
-		d=cumsum0[j]-prev;
-		if(d)
-			t=(cumsum/(float)n-prev)/d;
-		else
-			t=0;
-		
-		val=MAX(j-1,0)*(1-t)+j*t+min0;
-		
-		if(val>max0)
-			printf("ça va pas, non?\n");
-		
-		trans[i+(int)min]=val;
-		
-	}
-	
-	// apply histogram matching transformation
-	for(i=0;i<n;i++)
-		setValue2(trans[(int)getValue2(i,hdr,img)],i,hdr,img);
+    int				i,j,n,n0;
+    int				sz;
+    int				swapped;
+    char			*addr;
+    AnalyzeHeader	*hdr0;
+    char			*img0;
+    int				*hist,*hist0;
+    float			*cumsum0,cumsum,prev;
+    float			val;
+    float			min,min0;
+    float			max,max0;
+    float			d,t,*trans;
+
+    // load target volume
+    Analyze_load(volpath,&addr,&sz,&swapped);
+    hdr0=(AnalyzeHeader*)addr;
+    img0=(char*)(addr+sizeof(AnalyzeHeader));
+    // find max grey value in target volume
+    n0=hdr0->dim[1]*hdr0->dim[2]*hdr0->dim[3];
+    min0=max0=getValue2(0,hdr0,img0);
+    for(i=0;i<n0;i++)
+    {
+        val=getValue2(i,hdr0,img0);
+        if(val>max0)
+            max0=val;
+        if(val<min0)
+            min0=val;
+    }
+    // compute histogram for target volume
+    hist0=(int*)calloc(max0-min0+1,sizeof(int));
+    for(i=0;i<n0;i++)
+        hist0[(int)(getValue2(i,hdr0,img0)-min0)]++;
+    // compute cummulative histogram for target colume
+    cumsum0=(float*)calloc(max0-min0+1,sizeof(float));
+    cumsum0[0]=hist0[0];///(float)n0;
+    for(i=1;i<max0-min0+1;i++)
+        cumsum0[i]=cumsum0[i-1]+hist0[i];
+    for(i=0;i<max0-min0+1;i++)
+        cumsum0[i]/=(float)n0;
+
+    // find max grey value in source volume
+    n=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
+    min=max=getValue2(0,hdr,img);
+    for(i=0;i<n;i++)
+    {
+        val=getValue2(i,hdr,img);
+        if(val>max)
+            max=val;
+        if(val<min)
+            min=val;
+    }
+    // compute histogram for source volume
+    hist=(int*)calloc(max-min+1,sizeof(int));
+    for(i=0;i<n;i++)
+        hist[(int)(getValue2(i,hdr,img)-min)]++;
+
+    // compute histogram matching transformation
+    trans=(float*)calloc(max,sizeof(float));
+    cumsum=0;
+    prev=0;
+    j=0;
+    for(i=0;i<max-min+1;i++)
+    {
+        cumsum+=hist[i];
+
+        // find grey level in target volume where cumsum0==cumsum
+        while(cumsum0[j]<cumsum/(float)n)
+        {
+            prev=cumsum0[j];
+            j++;
+        }
+        d=cumsum0[j]-prev;
+        if(d)
+            t=(cumsum/(float)n-prev)/d;
+        else
+            t=0;
+        val=MAX(j-1,0)*(1-t)+j*t+min0;
+
+        if(val>max0)
+            printf("ERROR: value larger than maximum\n");
+
+        trans[i+(int)min]=val;
+    }
+
+    // apply histogram matching transformation
+    for(i=0;i<n;i++)
+        setValue2(trans[(int)getValue2(i,hdr,img)],i,hdr,img);
 }
 char* c2s(char *c, int n)
 {
@@ -1217,7 +1240,7 @@ void showNiiHeader(void)
     printf("extents:	%i\n",                       h->extents);           /*!< ++UNUSED++            */  /* int extents;         */
     printf("session_error:	%i\n",                   h->session_error);     /*!< ++UNUSED++            */  /* short session_error; */
     printf("regular:	%c\n",                       h->regular);           /*!< ++UNUSED++            */  /* char regular;        */
-    printf("dim_info:	%c\n",                       h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
+    printf("dim_info:	%i\n",                       (int)h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
 
                                                 /*--- was image_dimension substruct ---*/
     printf("dim:	%i,%i,%i,%i,%i,%i,%i,%i\n",      h->dim[0],h->dim[1],h->dim[2],h->dim[3],h->dim[4],h->dim[5],h->dim[6],h->dim[7]);            /*!< Data array dimensions.*/  /* short dim[8];        */
@@ -1236,8 +1259,8 @@ void showNiiHeader(void)
     printf("scl_slope:	%f\n",                       h->scl_slope );        /*!< Data scaling:	slope.  */  /* float funused1;      */
     printf("scl_inter:	%f\n",                       h->scl_inter );        /*!< Data scaling:	offset. */  /* float funused2;      */
     printf("slice_end:	%i\n",                       h->slice_end);         /*!< Last slice index.     */  /* float funused3;      */
-    printf("slice_code:	%c\n",                       h->slice_code );       /*!< Slice timing order.   */
-    printf("xyzt_units:	%c\n",                       h->xyzt_units );       /*!< Units of pixdim[1..4] */
+    printf("slice_code:	%i\n",                       (int)h->slice_code );       /*!< Slice timing order.   */
+    printf("xyzt_units:	%i\n",                       (int)h->xyzt_units );       /*!< Units of pixdim[1..4] */
     printf("cal_max:	%f\n",                       h->cal_max);           /*!< Max display intensity */  /* float cal_max;       */
     printf("cal_min:	%f\n",                       h->cal_min);           /*!< Min display intensity */  /* float cal_min;       */
     printf("slice_duration:	%f\n",                   h->slice_duration);    /*!< Time for 1 slice.     */  /* float compressed;    */
@@ -1315,7 +1338,7 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"slice_code")==0)
         h->slice_code=val[0];
     else if(strcmp(var,"xyzt_units")==0)
-        h->xyzt_units=val[0];
+        h->xyzt_units=(int)atof(val);
     else if(strcmp(var,"cal_max")==0)
         h->cal_max=(float)atof(val);
     else if(strcmp(var,"cal_min")==0)
@@ -1357,16 +1380,19 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"intent_name")==0)
         strcpy(h->intent_name,val);
     else if(strcmp(var,"magic")==0)
+    {
+        val[3] = (char)0; // force 4th character to null, as per nifti format
         strcpy(h->magic,val);
+    }
 }
 void createNiiHeader(char *txtpath, char *hdrpath)
 {
     nifti_1_header *h;
     FILE    *f;
     char    str[512],var[512],val[512];
-    
+
     h=(nifti_1_header *)calloc(1,sizeof(nifti_1_header));
-    
+
     f=fopen(txtpath,"r");
     while(!feof(f))
     {
@@ -1461,11 +1487,11 @@ void createNiiHeader(char *txtpath, char *hdrpath)
             strcpy(h->magic,val);
     }
     fclose(f);
-    
+
     f=fopen(hdrpath,"w");
     fwrite(h,1,sizeof(nifti_1_header),f);
     fclose(f);
-    
+
     free(h);
 }
 /**
@@ -1565,7 +1591,7 @@ void readTxtMesh(char *path, Mesh *m)
     FILE    *f;
     char    str[1024];
     int     np,nt,i;
-    
+
     f=fopen(path,"r");
     fgets(str,1024,f);
     sscanf(str," %i %i ",&np, &nt);
@@ -1593,7 +1619,7 @@ void readPlyMesh(char *path, Mesh *m)
     FILE    *f;
     int     i,x;
     char    str[512],str1[256],str2[256];
-        
+    
     f=fopen(path,"r");
     if(f==NULL){printf("ERROR: Cannot open file\n");return;}
 
@@ -1637,7 +1663,7 @@ void readMesh(char *path, Mesh *m)
 {
     int     i;
     char    *extension;
-    
+
     for(i=strlen(path);i>=0;i--)
         if(path[i]=='.')
             break;
@@ -1647,7 +1673,7 @@ void readMesh(char *path, Mesh *m)
         return;
     }
     extension=path+i+1;
-    
+
     if(strcmp(extension,"txt")==0)
         readTxtMesh(path,m);
     else
@@ -1678,7 +1704,7 @@ int planeBoxOverlap(float *nor,float *vert, float *maxbox)
 {
     int		q;
     float	vmin[3],vmax[3];
-    
+
     for(q=0;q<3;q++)
     if(nor[q]>0.0f)
     {
@@ -1708,52 +1734,52 @@ int triBoxOverlap(float3D boxcenter,int	i,Mesh *mesh)
     float3D	v0,v1,v2;
     float	min,max,p0,p1,p2,rad,fex,fey,fez;
     float3D	nor,e0,e1,e2;
-    
+
     v0=sub3D(p[t[i].a],boxcenter);
     v1=sub3D(p[t[i].b],boxcenter);
     v2=sub3D(p[t[i].c],boxcenter);
-    
+
     e0=sub3D(v1,v0);      // tri edge 0
     e1=sub3D(v2,v1);      // tri edge 1
     e2=sub3D(v0,v2);      // tri edge 2
-    
+
     fex = fabs(e0.x);
     fey = fabs(e0.y);
     fez = fabs(e0.z);
     AXISTEST_X01(e0.z, e0.y, fez, fey);
     AXISTEST_Y02(e0.z, e0.x, fez, fex);
     AXISTEST_Z12(e0.y, e0.x, fey, fex);
-    
+
     fex = fabs(e1.x);
     fey = fabs(e1.y);
     fez = fabs(e1.z);
     AXISTEST_X01(e1.z, e1.y, fez, fey);
     AXISTEST_Y02(e1.z, e1.x, fez, fex);
     AXISTEST_Z0(e1.y, e1.x, fey, fex);
-    
+
     fex = fabs(e2.x);
     fey = fabs(e2.y);
     fez = fabs(e2.z);
     AXISTEST_X2(e2.z, e2.y, fez, fey);
     AXISTEST_Y1(e2.z, e2.x, fez, fex);
     AXISTEST_Z12(e2.y, e2.x, fey, fex);
-    
+
     // test in X-direction
     FINDMINMAX(v0.x,v1.x,v2.x,min,max);
     if(min>boxhalfsize.x || max<-boxhalfsize.x) return 0;
-    
+
     // test in Y-direction
     FINDMINMAX(v0.y,v1.y,v2.y,min,max);
     if(min>boxhalfsize.y || max<-boxhalfsize.y) return 0;
-    
+
     // test in Z-direction
     FINDMINMAX(v0.z,v1.z,v2.z,min,max);
     if(min>boxhalfsize.z || max<-boxhalfsize.z) return 0;
-    
+
     nor=cross3D(e0,e1);
     if(!planeBoxOverlap((float*)&nor,(float*)&v0,(float*)&boxhalfsize))
         return 0;
-    
+
     return 1;   // box and triangle overlaps
 }
 float Min(float x, float y)
@@ -1777,12 +1803,15 @@ void resize(int dx, int dy, int dz)
     switch(hdr->datatype)
     {
         case UCHAR:
+        case DT_INT8:
             sz=dx*dy*dz*sizeof(char)+sizeof(nifti_1_header);
             break;
         case SHORT:
+        case DT_UINT16:
             sz=dx*dy*dz*sizeof(short)+sizeof(nifti_1_header);
             break;
         case INT:
+        case DT_UINT32:
             sz=dx*dy*dz*sizeof(int)+sizeof(nifti_1_header);
             break;
         case FLOAT:
@@ -1830,18 +1859,18 @@ void strokeMesh(char *path)
     Mesh    mesh;
     float   mx;
     nifti_1_header   *h;
-    
+
     h=(nifti_1_header*)hdr;
     pixdim=&(h->pixdim[1]);
-    
+
     mx=max();
-    
+
     readMesh(path,&mesh);
     np=mesh.np;
     nt=mesh.nt;
     p=mesh.p;
     t=mesh.t;
-    
+
     // find min, max, compute mesh center as (min+max)/2
     /*
     float3D min,max,cen,sz;
@@ -1862,17 +1891,8 @@ void strokeMesh(char *path)
     sz.y=max.y-min.y;
     sz.z=max.z-min.z;
     */
-    
-    // transform vertex coordinates to voxel indices
-    printf("offset: %f, %f, %f\n",h->srow_x[3],h->srow_y[3],h->srow_z[3]);
-    printf("pixdim: %f, %f, %f\n",pixdim[0],pixdim[1],pixdim[2]);
-    for(i=0;i<np;i++)
-    {
-        p[i].x=(p[i].x-h->srow_x[3])/pixdim[0];
-        p[i].y=(p[i].y-h->srow_y[3])/pixdim[1];
-        p[i].z=(p[i].z-h->srow_z[3])/pixdim[2];
-    }
-    
+
+
     // scan triangles
     for(l=0;l<nt;l++)
     {
@@ -1899,9 +1919,9 @@ void strokeMesh(char *path)
     char    str[1024];
     int     np,i;
     float   mx,x,y,z;
-    
+
     mx=max();
-    
+
     f=fopen(path,"r");
     fgets(str,1024,f);
     sscanf(str," %i %*i ",&np);
@@ -1962,14 +1982,14 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
     int vertices_length=0;
     int faces_length=0;
     int	i,j,k;
-    
+
     R[0]=1;
     R[1]=dim[0]+1;
     R[2]=(dim[0]+1)*(dim[1]+1);
-    
+
     if(R[2] * 2 > buffer_length)
         buffer = (int*)calloc(R[2] * 2,sizeof(int));
-    
+
     for(x[2]=0; x[2]<dim[2]-1; ++x[2])
     {
         int m = 1 + (dim[0]+1) * (1 + buf_no * (dim[1]+1));
@@ -2034,7 +2054,7 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
                     continue;
                 int du = R[iu];
                 int dv = R[iv];
-                
+            
                 if(storeFlag)
                 {
                     if(mask & 1)
@@ -2055,7 +2075,7 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
         n+=dim[0];
         buf_no ^= 1;
         R[2]=-R[2];
-        
+    
     }
     mesh->np=vertices_length;
     mesh->nt=faces_length;
@@ -2067,7 +2087,7 @@ void sampleMesh(char *mesh,char *result)
     char    str[1024];
     int     np,i;
     float   x,y,z,val;
-    
+
     f1=fopen(mesh,"r");
     f2=fopen(result,"w");
     fgets(str,1024,f1);
@@ -2099,7 +2119,7 @@ int getformatindex(char *path)
     int     i,n=sizeof(formats)/sizeof(long); // number of recognised formats
     int     found,index;
     char    *extension;
-    
+
     for(i=strlen(path);i>=0;i--)
         if(path[i]=='.')
             break;
@@ -2109,14 +2129,14 @@ int getformatindex(char *path)
         return 0;
     }
     extension=path+i+1;
-    
+
     for(i=0;i<n;i++)
     {
         found=(strcmp(formats[i],extension)==0);
         if(found)
             break;
     }
-    
+
     index=-1;
     if(i==0 || i==1)
     {
@@ -2183,65 +2203,65 @@ int getformatindex(char *path)
 }
 int loadVolume_Analyze(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
-	int		i,sz;
-	int		swapped;
-	char	*addr;
-	char	base[512];
-	
-	strcpy(base,path);
-	for(i=strlen(base);i>=0;i--)
-		if(base[i]=='.')
+    int		i,sz;
+    int		swapped;
+    char	*addr;
+    char	base[512];
+
+    strcpy(base,path);
+    for(i=strlen(base);i>=0;i--)
+        if(base[i]=='.')
         {
-			base[i]=(char)0;
+            base[i]=(char)0;
             break;
         }
-	sprintf(path,"%s.hdr",base);
-	printf("Loading hdr at %s\n",path);
-	Analyze_load(path,&addr,&sz,&swapped);
-	*theHdr=(AnalyzeHeader*)addr;
-	*theImg=(char*)(addr+sizeof(AnalyzeHeader));
-	dim[0]=(*theHdr)->dim[1];
-	dim[1]=(*theHdr)->dim[2];
-	dim[2]=(*theHdr)->dim[3];
-	voxdim[0]=(*theHdr)->pixdim[1];
-	voxdim[1]=(*theHdr)->pixdim[2];
-	voxdim[2]=(*theHdr)->pixdim[3];
-    
-	return 0;
+    sprintf(path,"%s.hdr",base);
+    printf("Loading hdr at %s\n",path);
+    Analyze_load(path,&addr,&sz,&swapped);
+    *theHdr=(AnalyzeHeader*)addr;
+    *theImg=(char*)(addr+sizeof(AnalyzeHeader));
+    dim[0]=(*theHdr)->dim[1];
+    dim[1]=(*theHdr)->dim[2];
+    dim[2]=(*theHdr)->dim[3];
+    voxdim[0]=(*theHdr)->pixdim[1];
+    voxdim[1]=(*theHdr)->pixdim[2];
+    voxdim[2]=(*theHdr)->pixdim[3];
+
+    return 0;
 }
 int saveVolume_Analyze(char *path)
 {
-	int		i;
-	char	base[512];
-	
-	strcpy(base,path);
-	for(i=strlen(base);i>=0;i--)
-		if(base[i]=='.')
+    int		i;
+    char	base[512];
+
+    strcpy(base,path);
+    for(i=strlen(base);i>=0;i--)
+        if(base[i]=='.')
         {
-			base[i]=(char)0;
+            base[i]=(char)0;
             break;
         }
-	sprintf(path,"%s.hdr",base);
-	printf("Saving hdr to %s\n",path);
-	Analyze_save_hdr(path,*hdr);
-	sprintf(path,"%s.img",base);
-	printf("Saving img to %s\n",path);
-	Analyze_save_img(path,*hdr,img);
-	
-	return 0;
+    sprintf(path,"%s.hdr",base);
+    printf("Saving hdr to %s\n",path);
+    Analyze_save_hdr(path,*hdr);
+    sprintf(path,"%s.img",base);
+    printf("Saving img to %s\n",path);
+    Analyze_save_img(path,*hdr,img);
+
+    return 0;
 }
 int loadVolume_MGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
     char	*addr;
     int		sz;
-    
+
     MGH_load_GZ(path,&addr,&sz);
     (*theHdr)=(AnalyzeHeader*)addr;
     (*theImg)=(char*)(addr+sizeof(AnalyzeHeader));
     dim[0]=(*theHdr)->dim[1];
     dim[1]=(*theHdr)->dim[2];
     dim[2]=(*theHdr)->dim[3];
-    
+
     return 0;
 }
 int saveVolume_MGZ(char *path)
@@ -2254,7 +2274,7 @@ int loadVolume_Nifti(char *path, AnalyzeHeader **theHdr, char **theImg)
     char	*addr;
     int		sz;
     int		swapped;
-    
+
     // load data
     Nifti_load(path,g_selectedVolume,&addr,&sz,&swapped);
     (*theHdr)=(AnalyzeHeader*)addr;
@@ -2270,9 +2290,9 @@ int loadVolume_Nifti(char *path, AnalyzeHeader **theHdr, char **theImg)
 int saveVolume_Nifti(char *path)
 {
     char	*addr=(char*)hdr;
-    
+
     Nifti_save((char*)path, addr);
-    
+
     return 0;
 }
 int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
@@ -2282,8 +2302,10 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
     char cmd[4096];
 
     // create temporary file name
-    if(getenv("TEMP")==NULL) strcat(filename,"/tmp");
-    else                     strcat(filename,getenv("TEMP"));
+    if(getenv("TEMP")==NULL)
+        strcat(filename,"/tmp");
+    else
+        strcat(filename,getenv("TEMP"));
     strcat(filename,"/nii.XXXXXX");
     result=mkstemp(filename);
     if(result==-1)
@@ -2293,17 +2315,27 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
     }
     if(verbose)
         printf("Tempname: %s\n",filename);
-    
+
     // uncompress orig.mgz into a temporary .mgh file
     sprintf(cmd,"gunzip -c %s > %s",path,filename);
-    system(cmd);
-    
+    result=system(cmd);
+    if(result)
+    {
+        printf("ERROR: Can't open file %s\n", path);
+        return 1;
+    }
+
     // load temporary file
     loadVolume_Nifti(filename, theHdr, theImg);
 
     // clean up
     sprintf(cmd,"/bin/rm -r %s",filename);
-    system(cmd);
+    result=system(cmd);
+    if(result)
+    {
+        printf("ERROR: Can't remove file %s\n", filename);
+        return 1;
+    }
 
     return 0;
 }
@@ -2311,9 +2343,9 @@ int saveVolume_NiftiGZ(char *path)
 {
     char	*addr=(char*)hdr;
     char    cmd[4096];
-    
+
     Nifti_save((char*)path, addr);
-    
+
     sprintf(cmd,"/usr/bin/gzip -f %s;/bin/mv %s.gz %s",path,path,path);
     system(cmd);
 
@@ -2325,7 +2357,7 @@ int saveVolume_INRIMAGE(char *path)
     float   *buff;
     FILE    *f;
     int     i,sz;
-    
+
     header=calloc(256,sizeof(char));
     for(i=0;i<256;i++)
         header[i]='\n';
@@ -2342,17 +2374,17 @@ int saveVolume_INRIMAGE(char *path)
     header[253]='#';
     header[254]='}';
     header[255]='\n';
-    
+
     sz=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
     buff=(float*)calloc(sz,sizeof(float));
     for(i=0;i<sz;i++)
         buff[i]=getValue1(i);
-    
+
     f=fopen(path,"w");
     fwrite(header,256,sizeof(char),f);
     fwrite(buff,sz,sizeof(float),f);
     fclose(f);
-    
+
     free(header);
     free(buff);
 
@@ -2532,15 +2564,15 @@ int saveVolume_Raw(char *path)
 }
 int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
-	int	err,format;
-	
-	format=getformatindex(path);
-	
-	switch(format)
-	{
-		case kAnalyzeVolume:
-			err=loadVolume_Analyze(path,theHdr,theImg);
-			break;
+    int	err,format;
+
+    format=getformatindex(path);
+
+    switch(format)
+    {
+        case kAnalyzeVolume:
+            err=loadVolume_Analyze(path,theHdr,theImg);
+            break;
         case kMGZVolume:
             err=loadVolume_MGZ(path,theHdr,theImg);
             break;
@@ -2575,16 +2607,16 @@ int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
 }
 int saveVolume(char *path)
 {
-	int	format;
-	
-	format=getformatindex(path);
+    int	format;
+
+    format=getformatindex(path);
     printf("[saveVolume] format index: %i\n",format);
-	
-	switch(format)
-	{
-		case kAnalyzeVolume:
-			saveVolume_Analyze(path);
-			break;
+
+    switch(format)
+    {
+        case kAnalyzeVolume:
+            saveVolume_Analyze(path);
+            break;
         case kMGZVolume:
             saveVolume_MGZ(path);
             break;
@@ -2606,55 +2638,55 @@ int saveVolume(char *path)
         case kTextVolume:
             printf("ERROR: Cannot save text volume without mask yet...");
             break;
-		default:
-			printf("ERROR: Output volume format not recognised\n");
-			break;
-	}
-	return 0;
+        default:
+            printf("ERROR: Output volume format not recognised\n");
+            break;
+    }
+    return 0;
 }
 
 int saveMaskedVolume_Text(char *path, char *maskpath){
-    
+
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
     int				mask_dim[4];
-    
+
     loadVolume(maskpath,&mask_hdr,&mask_img);
     mask_dim[0]=mask_hdr->dim[1];
     mask_dim[1]=mask_hdr->dim[2];
     mask_dim[2]=mask_hdr->dim[3];
-    
+
     printf("mask: min:%f max:%f \n",min(),max());
-    
+
     FILE *f = fopen(path, "w");
-    
+
     printf("volume: min:%f max:%f \n",min(),max());
-    
+
     for(int i=0;i<dim[0];i++)
-		for(int j=0;j<dim[1];j++)
-			for(int k=0;k<dim[2];k++){
+        for(int j=0;j<dim[1];j++)
+            for(int k=0;k<dim[2];k++){
                 int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
                 if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
                     fprintf(f, "%f ",getValue(i, j, k));
                 }
-        
+    
             }
-        
+    
     return 0;
 }
 
 int saveMaskedVolume(char *path, char *maskpath)
 {
-	int	format;
-	
-	format=getformatindex(path);
+    int	format;
+
+    format=getformatindex(path);
     printf("[saveVolume] format index: %i\n",format);
-	
-	switch(format)
-	{
-		case kAnalyzeVolume:
-			printf("ERROR: Cannot save Analyze volume with mask yet...");
-			break;
+
+    switch(format)
+    {
+        case kAnalyzeVolume:
+            printf("ERROR: Cannot save Analyze volume with mask yet...");
+            break;
         case kMGZVolume:
             printf("ERROR: Cannot save MGZ volume with mask yet...");
             break;
@@ -2685,7 +2717,7 @@ void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
     int				mask_dim[4];    
-    
+
     char filepath_x[1000];
     strcpy(filepath_x, path);
     filepath_x[strlen(filepath_x)-15]=0;
@@ -2704,24 +2736,24 @@ void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
         printf("Error opening file!\n");
         exit(1);
     }
-    
+
     loadVolume(path,&mask_hdr,&mask_img);       //load mask in the global variables
     mask_dim[0]=mask_hdr->dim[1];
     mask_dim[1]=mask_hdr->dim[2];
     mask_dim[2]=mask_hdr->dim[3];
-    
+
     int		i,j,k;
-	float	mi,ma;
-	float	*hist;
-	
-	hist=(float*)calloc(nbins,sizeof(float));
-	
-	mi=vmin;
-	ma=vmax;
-	printf("nbins %d\n",nbins);
-	for(i=0;i<dim[0];i++)
-		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++){
+    float	mi,ma;
+    float	*hist;
+
+    hist=(float*)calloc(nbins,sizeof(float));
+
+    mi=vmin;
+    ma=vmax;
+    printf("nbins %d\n",nbins);
+    for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++){
                 int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
                 if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
                     float index = ((nbins-1)*(getValue(i,j,k)-mi)/(ma-mi));
@@ -2733,19 +2765,19 @@ void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
     printf("delta %f\n",delta);
     //printf("x: \n");
     for(i=0;i<nbins;i++)
-	{
+    {
         fprintf(fx,"%f ",mi+delta*i+delta/2);
     }
     //printf("\n");
     //printf(" y: \n");
-	for(i=0;i<nbins;i++)
-	{
-		fprintf(fy,"%g",hist[i]);
-		if(i<nbins-1)
-			fprintf(fy," ");
-	}
-	free(hist);
-    
+    for(i=0;i<nbins;i++)
+    {
+        fprintf(fy,"%g",hist[i]);
+        if(i<nbins-1)
+            fprintf(fy," ");
+    }
+    free(hist);
+
 }
 
 void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *path2)
@@ -2756,9 +2788,9 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
     AnalyzeHeader	*mask_hdr2;
     char			*mask_img2;
     int				mask_dim2[4];
-    
-    
-    
+
+
+
     char filepath_x[1000];
     strcpy(filepath_x, path);
     filepath_x[strlen(filepath_x)-15]=0;
@@ -2769,7 +2801,7 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
     char extension[] = ".txt";
     snprintf(filepath_x,sizeof(filepath_x),"%s%s%s%d%s",filepath_x,fileName,name_x,nbins,extension);
     snprintf(filepath_y,sizeof(filepath_y),"%s%s%s%d%s",filepath_y,fileName,name_y,nbins,extension);
-    
+
     FILE *fx = fopen(filepath_x, "w");
     FILE *fy = fopen(filepath_y, "w");
     if (fx == NULL || fy == NULL)
@@ -2777,7 +2809,7 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
         printf("Error opening file!\n");
         exit(1);
     }
-    
+
     loadVolume(path,&mask_hdr,&mask_img);       //load mask in the global variables
     mask_dim[0]=mask_hdr->dim[1];
     mask_dim[1]=mask_hdr->dim[2];
@@ -2786,19 +2818,19 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
     mask_dim2[0]=mask_hdr2->dim[1];
     mask_dim2[1]=mask_hdr2->dim[2];
     mask_dim2[2]=mask_hdr2->dim[3];
-    
+
     int		i,j,k;
-	float	mi,ma;
-	float	*hist;
-	
-	hist=(float*)calloc(nbins,sizeof(float));
-	
-	mi=vmin;
-	ma=vmax;
-	printf("nbins %d\n",nbins);
-	for(i=0;i<dim[0];i++)
-		for(j=0;j<dim[1];j++)
-			for(k=0;k<dim[2];k++){
+    float	mi,ma;
+    float	*hist;
+
+    hist=(float*)calloc(nbins,sizeof(float));
+
+    mi=vmin;
+    ma=vmax;
+    printf("nbins %d\n",nbins);
+    for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++){
                 int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
                 int mask_i2 = k*mask_dim2[1]*mask_dim2[0]+j*mask_dim2[0]+i;
                 if ((getValue2(mask_i,mask_hdr, mask_img)==0 && getValue2(mask_i2,mask_hdr2, mask_img2)!=0)
@@ -2812,19 +2844,19 @@ void hist3(int nbins, float vmin, float vmax, char *fileName, char *path, char *
     printf("delta %f\n",delta);
     //printf("x: \n");
     for(i=0;i<nbins;i++)
-	{
+    {
         fprintf(fx,"%f ",mi+delta*i+delta/2);
     }
     //printf("\n");
     //printf(" y: \n");
-	for(i=0;i<nbins;i++)
-	{
-		fprintf(fy,"%g",hist[i]);
-		if(i<nbins-1)
-			fprintf(fy," ");
-	}
-	free(hist);
-    
+    for(i=0;i<nbins;i++)
+    {
+        fprintf(fy,"%g",hist[i]);
+        if(i<nbins-1)
+            fprintf(fy," ");
+    }
+    free(hist);
+
 }
 void mult(float val)
 {
@@ -2848,7 +2880,7 @@ void or(char *path)
     int             a,b;
 
     loadVolume(path,&mask_hdr,&mask_img);
-    
+
     // check dimensions
     if(dim[0]!=mask_hdr->dim[1] ||
        dim[1]!=mask_hdr->dim[2] ||
@@ -2857,7 +2889,7 @@ void or(char *path)
         printf("ERROR: dimensions do not match in xor\n");
         return;
     }
-    
+
     // or
     for(i=0;i<dim[0]*dim[1]*dim[2];i++)
     {
@@ -2874,7 +2906,7 @@ void and(char *path)
     int             a,b;
 
     loadVolume(path,&mask_hdr,&mask_img);
-    
+
     // check dimensions
     if(dim[0]!=mask_hdr->dim[1] ||
        dim[1]!=mask_hdr->dim[2] ||
@@ -2883,7 +2915,7 @@ void and(char *path)
         printf("ERROR: dimensions do not match in xor\n");
         return;
     }
-    
+
     // and
     for(i=0;i<dim[0]*dim[1]*dim[2];i++)
     {
@@ -2900,7 +2932,7 @@ void xor(char *path)
     int             a,b;
 
     loadVolume(path,&mask_hdr,&mask_img);
-    
+
     // check dimensions
     if(dim[0]!=mask_hdr->dim[1] ||
        dim[1]!=mask_hdr->dim[2] ||
@@ -2909,7 +2941,7 @@ void xor(char *path)
         printf("ERROR: dimensions do not match in xor\n");
         return;
     }
-    
+
     // xor
     for(i=0;i<dim[0]*dim[1]*dim[2];i++)
     {
@@ -2944,10 +2976,11 @@ void xor(char *path)
 -info                           information: dimensions, data type, pixel size
 -threshold  float,int           threshold(level,direction)
 -volume                         calculate volume
+-new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,offy,offz
 -zigzag                         print volume values in zigzag order
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
 -resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
--strokeMesh str                 set the vertices of the mesh (text format) at input path to value=max+1
+-strokeMesh str                 set the surface of the mesh (text format) at input path to value=max+1; the mesh needs to be in voxel coordinates; (you need to either provide an empty volume or stroke the mesh over the MRI that the segmentation used for mesh extraction had been created on)
 -surfaceNets level,path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
 -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
 */
@@ -2955,58 +2988,64 @@ void xor(char *path)
 #pragma mark -
 int main (int argc, const char * argv[])
 {
-	printf("%s\n",version);
-	
-	checkEndianness();
-	
-	// This command performs different computations and
-	// analyses in volume data.
-	// The operations are carried out in the order they
-	// appear in the arguments passed to the command
-	
-	int		i;
-	
+    printf("%s\n",version);
 
-	for(i=1;i<argc;i++)
-	{		
-		if(strcmp(argv[i],"-i")==0)				// input volume
-		{
-			loadVolume((char*)argv[++i],&hdr,&img);
-		}
-		else
-		if(strcmp(argv[i],"-o")==0)				// output volume
-		{
+    checkEndianness();
+
+    // This command performs different computations and
+    // analyses in volume data.
+    // The operations are carried out in the order they
+    // appear in the arguments passed to the command
+
+    int		i;
+    int result;
+
+
+    for(i=1;i<argc;i++)
+    {		
+        if(strcmp(argv[i],"-i")==0)				// input volume
+        {
+            result=loadVolume((char*)argv[++i],&hdr,&img);
+            if(result)
+            {
+                printf("ERROR: Can't load file\n");
+                return 1;
+            }
+        }
+        else
+        if(strcmp(argv[i],"-o")==0)				// output volume
+        {
             char    *filepath;
             char    *maskpath;
-			char    *str= (char*)argv[i+1];
+            char    *str= (char*)argv[i+1];
             filepath = strtok(str,",");
             maskpath = strtok(NULL,",");
-            
+        
             if(maskpath==NULL){
                 saveVolume(filepath);
             } else {
                 saveMaskedVolume(filepath,maskpath);
             }
-            
+        
             //saveVolume((char*)argv[++i]);
             i+=1;
-		}
-		else
-		if(strcmp(argv[i],"-boxFilter")==0)		// boxFilter(size, iter)
-		{
-			int		size, iter;
-			sscanf(argv[++i]," %i ",&size);
-			sscanf(argv[++i]," %i ",&iter);
-			boxFilter(size,iter);
-		}
-		else
-		if(strcmp(argv[i],"-largest6con")==0)	// largest 6 connected component
-		{
-			largestConnected();
-		}
-		else
-		if(strcmp(argv[i],"-connected")==0)	// largest 6 connected component
-		{
+        }
+        else
+        if(strcmp(argv[i],"-boxFilter")==0)		// boxFilter(size, iter)
+        {
+            int		size, iter;
+            sscanf(argv[++i]," %i ",&size);
+            sscanf(argv[++i]," %i ",&iter);
+            boxFilter(size,iter);
+        }
+        else
+        if(strcmp(argv[i],"-largest6con")==0)	// largest 6 connected component
+        {
+            largestConnected();
+        }
+        else
+        if(strcmp(argv[i],"-connected")==0)	// largest 6 connected component
+        {
             char *str=(char*)argv[++i];
             int n,i,j,k,label;
             n=sscanf(str,"%i,%i,%i,%i",&i,&j,&k,&label);
@@ -3015,22 +3054,22 @@ int main (int argc, const char * argv[])
                 return 1;
             }
             connected(i,j,k,label);
-		}
-		else
-		if(strcmp(argv[i],"-dilate")==0)		// dilate(size)
-		{
-			int		size;
-			sscanf(argv[++i]," %i ",&size);
-			dilate(size);
-		}
-		else
-		if(strcmp(argv[i],"-erode")==0)			// erode(size)
-		{
-			int		size;
-			sscanf(argv[++i]," %i ",&size);
-			erode(size);
-		}
-		else
+        }
+        else
+        if(strcmp(argv[i],"-dilate")==0)		// dilate(size)
+        {
+            int		size;
+            sscanf(argv[++i]," %i ",&size);
+            dilate(size);
+        }
+        else
+        if(strcmp(argv[i],"-erode")==0)			// erode(size)
+        {
+            int		size;
+            sscanf(argv[++i]," %i ",&size);
+            erode(size);
+        }
+        else
         if(strcmp(argv[i],"-compress")==0)			// compress rate coeff_file
         {
             float		rate;
@@ -3047,9 +3086,9 @@ int main (int argc, const char * argv[])
             convert(dtype);
         }
         else
-		if(strcmp(argv[i],"-hist")==0)				// hist(#bins)
-		{
-			int		nbins;
+        if(strcmp(argv[i],"-hist")==0)				// hist(#bins)
+        {
+            int		nbins;
             char    *strnbins;
             float   vmin;
             char    *strvmin;
@@ -3058,13 +3097,13 @@ int main (int argc, const char * argv[])
             char    *fileName;
             char    *path;
             char    *path2;
-			//sscanf(argv[++i]," %i ",&nbins);
-            
+            //sscanf(argv[++i]," %i ",&nbins);
+        
             char    *str= (char*)argv[i+1];
-            
+        
             strnbins = strtok(str,",");
             sscanf(strnbins," %i ",&nbins);
-            
+        
             strvmin = strtok(NULL, ",");
             if(strvmin != NULL){
                 sscanf(strvmin," %f ",&vmin);
@@ -3072,7 +3111,7 @@ int main (int argc, const char * argv[])
                 sscanf(strvmax," %f ",&vmax);
                 fileName = strtok(NULL,",");
                 path = strtok(NULL,",");
-                
+            
                 path2 = strtok(NULL,",");
                 if(path2 != NULL){
                     hist3(nbins, vmin, vmax, fileName, path, path2);
@@ -3082,39 +3121,39 @@ int main (int argc, const char * argv[])
             }else{
                 hist(nbins);
             }
-			i+=1;
-		}
-		else
-		if(strcmp(argv[i],"-matchHist")==0)				// matchHistogram(another_mri)
-		{
-			matchHistogram((char*)argv[++i]);
-		}
-		else
-		if(strcmp(argv[i],"-stats")==0)				// stats, returns mean, std, min, max
-		{
-			float	x=mean();
-			float	s=std();
-			float	mi=min();
-			float	ma=max();
-			
-			printf("mean %g\nstd %g\nmin %g\nmax %g\n",x,s,mi,ma);
-		}
-		else
-		if(strcmp(argv[i],"-tiff")==0)				// write slice as tiff file
-		{
-			char	*path;//[512]; //=(char*)argv[i+1];
+            i+=1;
+        }
+        else
+        if(strcmp(argv[i],"-matchHist")==0)				// matchHistogram(another_mri)
+        {
+            matchHistogram((char*)argv[++i]);
+        }
+        else
+        if(strcmp(argv[i],"-stats")==0)				// stats, returns mean, std, min, max
+        {
+            float	x=mean();
+            float	s=std();
+            float	mi=min();
+            float	ma=max();
+        
+            printf("mean %g\nstd %g\nmin %g\nmax %g\n",x,s,mi,ma);
+        }
+        else
+        if(strcmp(argv[i],"-tiff")==0)				// write slice as tiff file
+        {
+            char	*path;//[512]; //=(char*)argv[i+1];
             char	*cmap;//[64]; //=(char*)argv[i+2];
             char	*ori;//[64]; //=(char*)argv[i+3];
             float	slice;
             char    *strslice;
             //sscanf(argv[i+4]," %f ",&slice);
-            
+        
             char    *str= (char*)argv[i+1];
-            
+        
             path = strtok(str,",");
             cmap = strtok(NULL,",");
             ori = strtok(NULL,",");
-            
+        
             strslice = strtok(NULL,",");
             if(strslice !=NULL)
             {
@@ -3124,35 +3163,35 @@ int main (int argc, const char * argv[])
             }
             drawSlice(path,cmap,ori,slice);
             i+=1;
-		}
-		else
-		if(strcmp(argv[i],"-info")==0)				// information: dimensions, data type, pixel size
-		{
+        }
+        else
+        if(strcmp(argv[i],"-info")==0)				// information: dimensions, data type, pixel size
+        {
             info();
-		}
-		else
-		if(strcmp(argv[i],"-selectVolume")==0)				// selectVolume(svol)
-		{
-			int		svol;
-			sscanf(argv[++i]," %i ",&svol);
-			
+        }
+        else
+        if(strcmp(argv[i],"-selectVolume")==0)				// selectVolume(svol)
+        {
+            int		svol;
+            sscanf(argv[++i]," %i ",&svol);
+        
             g_selectedVolume=svol;
-		}
-		else
-		if(strcmp(argv[i],"-threshold")==0)				// threshold(level,direction)
-		{
-			float	level;
-			int		direction;
-			int     n;
-			n=sscanf(argv[++i]," %f , %i ",&level,&direction);
-			if(n!=2)
-			{
-			    printf("ERROR: threshold takes two arguments, level and direction\n");
-			    return 1;
-			}
-			threshold(level,direction);
-		}
-		else
+        }
+        else
+        if(strcmp(argv[i],"-threshold")==0)				// threshold(level,direction)
+        {
+            float	level;
+            int		direction;
+            int     n;
+            n=sscanf(argv[++i]," %f , %i ",&level,&direction);
+            if(n!=2)
+            {
+                printf("ERROR: threshold takes two arguments, level and direction\n");
+                return 1;
+            }
+            threshold(level,direction);
+        }
+        else
         if(strcmp(argv[i],"-volume")==0)				// calculate volume
         {
             float	vol=volume();
@@ -3195,24 +3234,24 @@ int main (int argc, const char * argv[])
             char path[512];
             Mesh m;
             FILE *f;
-            
+        
             n=sscanf(str," %f , %s ",&level,path);
             if(n!=2)
             {
                 printf("ERROR: surfaceNets requires 2 arguments: level, path\n");
                 return 1;
             }
-            
+        
             surfaceNets_init();
             surfaceNets(level,&m,0);	// 1st pass: evaluate memory requirements
             m.p=(float3D*)calloc(m.np,sizeof(float3D));
             m.t=(int3D*)calloc(m.nt,sizeof(int3D));
             surfaceNets(level,&m,1);	// 2nd pass: store vertices and triangles
-            
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
             for(i=0;i<m.np;i++)
-                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+//                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
             for(i=0;i<m.nt;i++)
                 fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
             fclose(f);
@@ -3294,8 +3333,8 @@ int main (int argc, const char * argv[])
         }
         else
         {
-        	printf("WARNING: unknown command '%s'\n",argv[i]);
+            printf("WARNING: unknown command '%s'\n",argv[i]);
         }
-	}
+    }
     return 0;
 }

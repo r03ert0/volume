@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Analyze.h"
+#include "swap.h"
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
