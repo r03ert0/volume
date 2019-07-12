@@ -447,6 +447,53 @@ void dilate(int r)
         setValue(1,i,j,k);
     free(tmp);
 }
+void dilateLabels(int r)
+{
+    int     iter;
+    int		i,j,k;
+    int		a,b,c;
+    char	*tmp=calloc(dim[0]*dim[1]*dim[2],1);
+    int     max;
+    int     *lab=calloc(256,1),ind;
+
+    for(iter=0;iter<r;iter++)
+    {
+        for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+        for(k=0;k<dim[2];k++)
+        if(getValue(i,j,k)==0)
+        {
+            for(a=0;a<256;a++)
+                lab[a]=0;
+            for(a=-1;a<=1;a++)
+            for(b=-1;b<=1;b++)
+            for(c=-1;c<=1;c++)
+            if(	i+a>=0 && i+a<dim[0] &&
+                j+b>=0 && j+b<dim[1] &&
+                k+c>=0 && k+c<dim[2])
+            {
+                ind=(int)getValue(i+a,j+b,k+c);
+                if(ind>0)
+                    lab[ind]+=1;
+            }
+            max=0;
+            for(a=1;a<256;a++)
+            if(lab[a]>lab[max])
+                max=a;
+            if(max>0)
+                tmp[k*dim[1]*dim[0]+j*dim[0]+i]=max;
+        }
+
+        for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+        for(k=0;k<dim[2];k++)
+        if(getValue(i,j,k)<1 && tmp[k*dim[1]*dim[0]+j*dim[0]+i]>0)
+            setValue(tmp[k*dim[1]*dim[0]+j*dim[0]+i],i,j,k);
+    }
+
+    free(tmp);
+    free(lab);
+}
 void erode(int r)
 {
     printf("[erode]\n");
@@ -2900,6 +2947,7 @@ void xor(char *path)
 -largest6con                    largest 6 connected component
 -dilate int                     dilate(size)
 -erode  int                     erode(size)
+-dilateLabels int               dilate(size) keeping the labels in the volume
 -compress   float str           cosinus transform compress rate coeff_file
 -hist   int                     hist(#bins)
 -not                            logical not
@@ -2997,6 +3045,13 @@ int main (int argc, const char * argv[])
             int		size;
             sscanf(argv[++i]," %i ",&size);
             dilate(size);
+        }
+        else
+        if(strcmp(argv[i],"-dilateLabels")==0)		// dilateLabels(size)
+        {
+            int		size;
+            sscanf(argv[++i]," %i ",&size);
+            dilateLabels(size);
         }
         else
         if(strcmp(argv[i],"-erode")==0)			// erode(size)
