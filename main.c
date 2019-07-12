@@ -22,6 +22,7 @@ char version[]="volume, v5, roberto toro, 10 Decembre 2017"; // added resize
 #define kSchematicVolume 5
 #define kTextVolume      6
 #define kINRIMAGEVolume  7
+#define kRawVolume       8
 
 typedef struct {
     float x,y,z;
@@ -1286,7 +1287,7 @@ void showNiiHeader(void)
     printf("extents:	%i\n",                       h->extents);           /*!< ++UNUSED++            */  /* int extents;         */
     printf("session_error:	%i\n",                   h->session_error);     /*!< ++UNUSED++            */  /* short session_error; */
     printf("regular:	%c\n",                       h->regular);           /*!< ++UNUSED++            */  /* char regular;        */
-    printf("dim_info:	%c\n",                       h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
+    printf("dim_info:	%i\n",                       (int)h->dim_info);          /*!< MRI slice ordering.   */  /* char hkey_un0;       */
 
                                                 /*--- was image_dimension substruct ---*/
     printf("dim:	%i,%i,%i,%i,%i,%i,%i,%i\n",      h->dim[0],h->dim[1],h->dim[2],h->dim[3],h->dim[4],h->dim[5],h->dim[6],h->dim[7]);            /*!< Data array dimensions.*/  /* short dim[8];        */
@@ -1305,8 +1306,8 @@ void showNiiHeader(void)
     printf("scl_slope:	%f\n",                       h->scl_slope );        /*!< Data scaling:	slope.  */  /* float funused1;      */
     printf("scl_inter:	%f\n",                       h->scl_inter );        /*!< Data scaling:	offset. */  /* float funused2;      */
     printf("slice_end:	%i\n",                       h->slice_end);         /*!< Last slice index.     */  /* float funused3;      */
-    printf("slice_code:	%c\n",                       h->slice_code );       /*!< Slice timing order.   */
-    printf("xyzt_units:	%c\n",                       h->xyzt_units );       /*!< Units of pixdim[1..4] */
+    printf("slice_code:	%i\n",                       (int)h->slice_code );       /*!< Slice timing order.   */
+    printf("xyzt_units:	%i\n",                       (int)h->xyzt_units );       /*!< Units of pixdim[1..4] */
     printf("cal_max:	%f\n",                       h->cal_max);           /*!< Max display intensity */  /* float cal_max;       */
     printf("cal_min:	%f\n",                       h->cal_min);           /*!< Min display intensity */  /* float cal_min;       */
     printf("slice_duration:	%f\n",                   h->slice_duration);    /*!< Time for 1 slice.     */  /* float compressed;    */
@@ -1384,7 +1385,7 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"slice_code")==0)
         h->slice_code=val[0];
     else if(strcmp(var,"xyzt_units")==0)
-        h->xyzt_units=val[0];
+        h->xyzt_units=(int)atof(val);
     else if(strcmp(var,"cal_max")==0)
         h->cal_max=(float)atof(val);
     else if(strcmp(var,"cal_min")==0)
@@ -1426,7 +1427,10 @@ void setNiiHeader(char *var, char *val)
     else if(strcmp(var,"intent_name")==0)
         strcpy(h->intent_name,val);
     else if(strcmp(var,"magic")==0)
+    {
+        val[3] = (char)0; // force 4th character to null, as per nifti format
         strcpy(h->magic,val);
+    }
 }
 void createNiiHeader(char *txtpath, char *hdrpath)
 {
@@ -2158,7 +2162,7 @@ void sampleMesh(char *mesh,char *result)
 #pragma mark [ Format conversion ]
 int getformatindex(char *path)
 {
-    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt","inr"};
+    char    *formats[]={"hdr","img","mgz","nii","gz","schematic","txt","inr","bin"};
     int     i,n=sizeof(formats)/sizeof(long); // number of recognised formats
     int     found,index;
     char    *extension;
@@ -2230,11 +2234,18 @@ int getformatindex(char *path)
             printf("Format: INRIMAGE volume\n");
     }
     else
+    if(i==8)
     {
-        printf("ERROR: unrecognized format \"%s\"\n",extension);
-        return 0;
+        index=kRawVolume;
+        if(verbose)
+            printf("Format: Raw data volume\n");
     }
-
+    else
+	{
+		printf("ERROR: unrecognized format \"%s\"\n",extension);
+		return 0;
+	}
+	
     return index;
 }
 int loadVolume_Analyze(char *path, AnalyzeHeader **theHdr, char **theImg)
@@ -2554,6 +2565,50 @@ int saveVolume_Schematic(char *path)
 
     return 0;
 }
+int saveVolume_Raw(char *path)
+{
+	int		i;
+	char	base[512];
+    FILE    *f;
+    int     sz;
+	
+	strcpy(base,path);
+	for(i=strlen(base);i>=0;i--)
+		if(base[i]=='.')
+        {
+			base[i]=(char)0;
+            break;
+        }
+	sprintf(path,"%s.bin",base);
+	printf("Saving data to %s\n",path);
+    f=fopen(path,"w");
+    sz=hdr->dim[1]*hdr->dim[2]*hdr->dim[3];
+	switch(hdr->datatype)
+	{	case UCHAR:		fwrite(img,sz,sizeof(char),f); break;
+		case SHORT:		fwrite(img,sz,sizeof(short),f); break;
+		case FLOAT:		fwrite(img,sz,sizeof(float),f); break;
+		case INT:		fwrite(img,sz,sizeof(int),f); break;
+		default:		printf("Unsupported data type\n");
+	}
+    fclose(f);
+
+	sprintf(path,"%s.hdr.txt",base);
+	printf("Saving header to %s\n",path);
+	f=fopen(path,"w");
+	fprintf(f,"dim: %i %i %i\n",hdr->dim[1],hdr->dim[2],hdr->dim[3]);
+	fprintf(f,"dataType: ");
+	switch(hdr->datatype)
+	{	case UCHAR:		fprintf(f,"uchar\n"); break;
+		case SHORT:		fprintf(f,"short\n"); break;
+		case FLOAT:		fprintf(f,"float\n"); break;
+		case INT:		fprintf(f,"int\n"); break;
+		default:		fprintf(f,"Unsupported data type\n");
+	}
+	fprintf(f,"voxelSize: %g %g %g\n",hdr->pixdim[1],hdr->pixdim[2],hdr->pixdim[3]);
+    fclose(f);
+	
+	return 0;
+}
 int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
 {
     int	err,format;
@@ -2582,17 +2637,20 @@ int loadVolume(char *path, AnalyzeHeader **theHdr, char **theImg)
             err=1;
             printf("ERROR: Cannot read schematic volume yet...");
             break;
-        default:
-            printf("ERROR: Input volume format not recognised\n");
-            return 1;			
-    }
-    if(err!=0)
-    {
-        printf("ERROR: cannot read file: %s\n",path);
-        return 1;
-    }
-
-    return 0;
+        case kRawVolume:
+            err=1;
+            printf("ERROR: Cannot read raw data volume yet...");
+            break;
+		default:
+			printf("ERROR: Input volume format not recognised\n");
+			return 1;			
+	}
+	if(err!=0)
+	{
+		printf("ERROR: cannot read file: %s\n",path);
+		return 1;
+	}
+	return 0;
 }
 int saveVolume(char *path)
 {
@@ -2620,6 +2678,9 @@ int saveVolume(char *path)
             break;
         case kSchematicVolume:
             saveVolume_Schematic(path);
+            break;
+        case kRawVolume:
+            saveVolume_Raw(path);
             break;
         case kTextVolume:
             printf("ERROR: Cannot save text volume without mask yet...");
@@ -2688,11 +2749,14 @@ int saveMaskedVolume(char *path, char *maskpath)
         case kTextVolume:
             saveMaskedVolume_Text(path,maskpath);
             break;
-        default:
-            printf("ERROR: Output volume format not recognised\n");
+        case kRawVolume:
+            printf("ERROR: Cannot save Raw volume with mask yet...");
             break;
-    }
-    return 0;
+		default:
+			printf("ERROR: Output volume format not recognised\n");
+			break;
+	}
+	return 0;
 }
 
 void hist2(int nbins, float vmin, float vmax, char *fileName, char *path)
@@ -3007,7 +3071,7 @@ int main (int argc, const char * argv[])
         
             if(maskpath==NULL){
                 saveVolume(filepath);
-            }else{
+            } else {
                 saveMaskedVolume(filepath,maskpath);
             }
         

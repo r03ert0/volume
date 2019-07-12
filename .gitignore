@@ -1,23 +1,16 @@
 
 build/
-
 *.o
-
 *.tif
-
 *.xcuserstate
-
 *.xcscheme
-
 *.plist
-
 *.xcbkptlist
-
 *.pbxproj
-
 volume
-
 volume.xcodeproj/project.xcworkspace/contents.xcworkspacedata
-
 volume.xcodeproj/project.xcworkspace/xcshareddata/volume.xccheckout
+.vscode
+.DS_Store
+._.DS_Store
 
