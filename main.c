@@ -3341,14 +3341,18 @@ int main (int argc, const char * argv[])
             FILE *f;
             int flagScale=0;
         
-            n=sscanf(str," %f , %s , %i ",&level,path,&flagScale);
+            n=sscanf(str," %f , %i, %s ",&level,&flagScale,path);
             if(n==3)
                 flagScale=(flagScale==1);
             else
-            if(n!=2)
             {
-                printf("ERROR: surfaceNets requires 2 arguments: level, path\n");
-                return 1;
+                flagScale=0;
+                n=sscanf(str," %f , %s ",&level,path);
+                if(n!=2)
+                {
+                    printf("ERROR: surfaceNets requires 2 arguments: level, path\n");
+                    return 1;
+                }
             }
         
             surfaceNets_init();
