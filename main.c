@@ -40,7 +40,7 @@ AnalyzeHeader	*hdr;
 char			*img;
 int				dim[4];
 float           voxdim[4];
-int				verbose=1;
+int				verbose=0;
 int				g_selectedVolume=0;
 
 void threshold(float value, int direction);
@@ -198,6 +198,49 @@ void checkEndianness(void)
         endianness=kMOTOROLA;
     else
         endianness=kINTEL;
+}
+int systemOutput(char *cmd, char *out)
+{
+    FILE *fp;
+    fp=popen(cmd, "r");
+    if (fp==NULL)
+        return 0;
+    else
+        fgets(out,256,fp);
+    pclose(fp);
+    return 1;
+}
+void checkVersion(const char *home)
+{
+    char cmd[1024];
+    char v_local[128];
+    char v_remote[128];
+
+    sprintf(cmd, "git --git-dir $(dirname %s)/.git log -1 --format=%%cd", home);
+    if(!systemOutput(cmd, v_local))
+    {
+        printf("ERROR: Failed to get local version\n");
+        return;
+    }
+
+    sprintf(cmd, "git --git-dir $(dirname %s)/.git log -1 --format=%%cd origin/master", home);
+    if(!systemOutput(cmd, v_remote))
+    {
+        printf("ERROR: Failed to get remote version\n");
+        return;
+    }
+
+    printf("Last update: %s", v_local);
+    if(strcmp(v_local, v_remote) == 0)
+        printf("Code is up to date.\n");
+    else
+    {
+        printf("WARNING: Local and remote versions are not the same\n");
+        printf("Local: %s", v_local);
+        printf("Remote: %s", v_remote);
+    }
+    
+    return;
 }
 #pragma mark -
 void boxFilter1(int r)
@@ -2062,11 +2105,11 @@ void surfaceNets(float level, Mesh *mesh, int storeFlag)
                 if(!(edge_mask & (1<<i)))
                     continue;
                 ++e_count;
-                int e0 = cube_edges[ i<<1 ];       //Unpack vertices
+                int e0 = cube_edges[ i<<1 ]; // Unpack vertices
                 int e1 = cube_edges[(i<<1)+1];
-                float g0 = grid[e0];                 //Unpack grid values
+                float g0 = grid[e0]; // Unpack grid values
                 float g1 = grid[e1];
-                float t  = g0 - g1;                  //Compute point of intersection
+                float t  = g0 - g1; // Compute point of intersection
                 if(fabs(t) > 1e-6)
                     t = g0 / t;
                 else
@@ -3029,17 +3072,13 @@ void xor(char *path)
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
 -resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
 -strokeMesh str                 set the surface of the mesh (text format) at input path to value=max+1; the mesh needs to be in voxel coordinates; (you need to either provide an empty volume or stroke the mesh over the MRI that the segmentation used for mesh extraction had been created on)
--surfaceNets level,path         extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path
+-surfaceNets level,path[,scale] extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path. Optional: scale=1 to scale by voxel size
 -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
 */
 
 #pragma mark -
 int main (int argc, const char * argv[])
 {
-    printf("%s\n",version);
-
-    checkEndianness();
-
     // This command performs different computations and
     // analyses in volume data.
     // The operations are carried out in the order they
@@ -3048,6 +3087,7 @@ int main (int argc, const char * argv[])
     int		i;
     int result;
 
+    checkEndianness();
 
     for(i=1;i<argc;i++)
     {		
@@ -3247,6 +3287,16 @@ int main (int argc, const char * argv[])
             threshold(level,direction);
         }
         else
+        if(strcmp(argv[i],"-v")==0)	// turn on verbose mode
+        {
+            verbose+=1;
+
+            // print some information
+            printf("%s\n",version);
+            checkVersion(argv[0]);
+            printf("CPU: %s\n",(endianness==kMOTOROLA)?"Motorola":"Intel");
+        }
+        else
         if(strcmp(argv[i],"-volume")==0)				// calculate volume
         {
             float	vol=volume();
@@ -3289,8 +3339,12 @@ int main (int argc, const char * argv[])
             char path[512];
             Mesh m;
             FILE *f;
+            int flagScale=0;
         
-            n=sscanf(str," %f , %s ",&level,path);
+            n=sscanf(str," %f , %s , %i ",&level,path,&flagScale);
+            if(n==3)
+                flagScale=(flagScale==1);
+            else
             if(n!=2)
             {
                 printf("ERROR: surfaceNets requires 2 arguments: level, path\n");
@@ -3304,9 +3358,12 @@ int main (int argc, const char * argv[])
             surfaceNets(level,&m,1);	// 2nd pass: store vertices and triangles
             f=fopen(path,"w");
             fprintf(f,"%i %i\n",m.np,m.nt);
-            for(i=0;i<m.np;i++)
-//                fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
-                fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
+            if(flagScale)
+                for(i=0;i<m.np;i++)
+                    fprintf(f,"%f %f %f\n",m.p[i].x*hdr->pixdim[1],m.p[i].y*hdr->pixdim[2],m.p[i].z*hdr->pixdim[3]);
+            else
+                for(i=0;i<m.np;i++)
+                    fprintf(f,"%f %f %f\n",m.p[i].x,m.p[i].y,m.p[i].z);
             for(i=0;i<m.nt;i++)
                 fprintf(f,"%i %i %i\n",m.t[i].a,m.t[i].b,m.t[i].c);
             fclose(f);
