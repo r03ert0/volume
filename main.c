@@ -3045,6 +3045,7 @@ void xor(char *path)
 /*
 -i str                          input volume
 -o  str                         output volume
+-convert str                    convert datatype to uchar, short, int or float
 -boxFilter size iter            box filter the mri data with a box of size 'size' for 'iter' iterations
 -selectVolume int				selects the n-th volume in a nifti file with many volumes
 -selectVramon str               selects a specific volume from a vramonz file
@@ -3062,9 +3063,13 @@ void xor(char *path)
 -and path                       logical and with volume at path
 -xor path                       logical xor with volume at path
 -matchHist  str                 matchHistogram(another_mri)
+-mult float                     multiply volume by float
 -stats                          stats, returns mean, std, min, max
 -tiff   str str str float       write slice as tiff file. Args: path, cmap, ori {x, y, z}, slice
 -info                           information: dimensions, data type, pixel size
+-showNiiHdr                     display the nifti header
+-setNiiHdr str str              set fields of the nifti header
+-createNiiHdr txt_path out_path create a nifti header based on a text file
 -threshold  float,int           threshold(level,direction)
 -volume                         calculate volume
 -new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,offy,offz
@@ -3072,7 +3077,7 @@ void xor(char *path)
 -decompose  str                 decompose(basename) a volume with many values into volumes with one single value
 -resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
 -strokeMesh str                 set the surface of the mesh (text format) at input path to value=max+1; the mesh needs to be in voxel coordinates; (you need to either provide an empty volume or stroke the mesh over the MRI that the segmentation used for mesh extraction had been created on)
--surfaceNets level,path[,scale] extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path. Optional: scale=1 to scale by voxel size
+-surfaceNets level[,scale],path extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path. Optional: scale=1 to scale by voxel size
 -sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
 */
 
