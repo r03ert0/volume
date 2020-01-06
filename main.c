@@ -3110,7 +3110,8 @@ int main (int argc, const char * argv[])
         {
             char    *filepath;
             char    *maskpath;
-            char    *str= (char*)argv[i+1];
+            char    str[512];
+            strcpy(str,argv[i+1]);
             filepath = strtok(str,",");
             maskpath = strtok(NULL,",");
         
