@@ -985,7 +985,9 @@ void threshold(float value, int direction)
     for(k=0;k<dim[2];k++)
     {
         val=getValue(i,j,k);
-        if((val>=value && direction==1)||(val<=value && direction==0))
+        if((direction==1 && val>=value)
+           || (direction==0 && val<=value)
+           || (direction==2 && val==value))
             setValue(1,i,j,k);
         else
             setValue(0,i,j,k);
@@ -3070,7 +3072,7 @@ void xor(char *path)
 -showNiiHdr                     display the nifti header
 -setNiiHdr str str              set fields of the nifti header
 -createNiiHdr txt_path out_path create a nifti header based on a text file
--threshold  float,int           threshold(level,direction)
+-threshold  float,int           threshold(level,direction), where direction 1: >=, 0: <=, 2: ==
 -volume                         calculate volume
 -new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,offy,offz
 -zigzag                         print volume values in zigzag order
