@@ -2433,12 +2433,17 @@ int loadVolume_NiftiGZ(char *path, AnalyzeHeader **theHdr, char **theImg)
 }
 int saveVolume_NiftiGZ(char *path)
 {
-    char	*addr=(char*)hdr;
+    char    *addr=(char*)hdr;
     char    cmd[4096];
+    char    newPath[4096];
 
-    Nifti_save((char*)path, addr);
+    // remove '.gz' extension: will be added back by gzip
+    strncpy(newPath,path,strlen(path)-3);
 
-    sprintf(cmd,"/usr/bin/gzip -f %s;/bin/mv %s.gz %s",path,path,path);
+    Nifti_save((char*)newPath, addr);
+
+    //sprintf(cmd,"/usr/bin/gzip -f %s;/bin/mv %s.gz %s",path,path,path);
+    sprintf(cmd,"/usr/bin/gzip -f %s",newPath);
     system(cmd);
 
     return 0;
