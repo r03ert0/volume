@@ -2742,6 +2742,7 @@ int saveMaskedVolume_Text(char *path, char *maskpath){
     AnalyzeHeader	*mask_hdr;
     char			*mask_img;
     int				mask_dim[4];
+    int i,j,k;
 
     loadVolume(maskpath,&mask_hdr,&mask_img);
     mask_dim[0]=mask_hdr->dim[1];
@@ -2754,9 +2755,9 @@ int saveMaskedVolume_Text(char *path, char *maskpath){
 
     printf("volume: min:%f max:%f \n",min(),max());
 
-    for(int i=0;i<dim[0];i++)
-        for(int j=0;j<dim[1];j++)
-            for(int k=0;k<dim[2];k++){
+    for(i=0;i<dim[0];i++)
+        for(j=0;j<dim[1];j++)
+            for(k=0;k<dim[2];k++){
                 int mask_i = k*mask_dim[1]*mask_dim[0]+j*mask_dim[0]+i;
                 if (getValue2(mask_i,mask_hdr, mask_img)!=0 ){               //masking
                     fprintf(f, "%f ",getValue(i, j, k));
