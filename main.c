@@ -2440,6 +2440,9 @@ int saveVolume_NiftiGZ(char *path)
     // remove '.gz' extension: will be added back by gzip
     strncpy(newPath,path,strlen(path)-3);
 
+    // enforce string end
+    newPath[strlen(path)-3]=(char)0;
+
     Nifti_save((char*)newPath, addr);
 
     //sprintf(cmd,"/usr/bin/gzip -f %s;/bin/mv %s.gz %s",path,path,path);
