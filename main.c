@@ -2966,6 +2966,13 @@ void mult(float val)
     for(i=0;i<dim[0]*dim[1]*dim[2];i++)
         setValue1(val*getValue1(i),i);
 }
+void add(float val)
+{
+    int             i;
+    // add
+    for(i=0;i<dim[0]*dim[1]*dim[2];i++)
+        setValue1(val+getValue1(i),i);
+}
 void not()
 {
     int             i;
@@ -3052,45 +3059,63 @@ void xor(char *path)
     }
 }
 
-
-/*
--i str                          input volume
--o  str                         output volume
--convert str                    convert datatype to uchar, short, int or float
--boxFilter size iter            box filter the mri data with a box of size 'size' for 'iter' iterations
--selectVolume int				selects the n-th volume in a nifti file with many volumes
--selectVramon str               selects a specific volume from a vramonz file
--infoVramon str                 display the list of volumes contained in a vramonz file
--saveVramon str str             combine a volume and a mask into a vramonz file
--connected i,j,k,label          set the 6 connected component starting at coordinate i,j,k to value 'label'
--largest6con                    largest 6 connected component
--dilate int                     dilate(size)
--erode  int                     erode(size)
--dilateLabels int               dilate(size) keeping the labels in the volume
--compress   float str           cosinus transform compress rate coeff_file
--hist   int                     hist(#bins)
--not                            logical not
--or path                        logical or with volume at path
--and path                       logical and with volume at path
--xor path                       logical xor with volume at path
--matchHist  str                 matchHistogram(another_mri)
--mult float                     multiply volume by float
--stats                          stats, returns mean, std, min, max
--tiff   str str str float       write slice as tiff file. Args: path, cmap, ori {x, y, z}, slice
--info                           information: dimensions, data type, pixel size
--showNiiHdr                     display the nifti header
--setNiiHdr str str              set fields of the nifti header
--createNiiHdr txt_path out_path create a nifti header based on a text file
--threshold  float,int           threshold(level,direction), where direction 1: >=, 0: <=, 2: ==
--volume                         calculate volume
--new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,offy,offz
--zigzag                         print volume values in zigzag order
--decompose  str                 decompose(basename) a volume with many values into volumes with one single value
--resize int,int,int             resize the volume to the new dimensions x, y, z. The original volume is kept at the center
--strokeMesh str                 set the surface of the mesh (text format) at input path to value=max+1; the mesh needs to be in voxel coordinates; (you need to either provide an empty volume or stroke the mesh over the MRI that the segmentation used for mesh extraction had been created on)
--surfaceNets level[,scale],path extract isosurface from the volume at the indicated level using the surface nets algorithm, save at the indicated path. Optional: scale=1 to scale by voxel size
--sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the vertices of the mesh pointed by the file path to the result path
-*/
+void printHelp(void)
+{
+     printf("\
+ Commands\n\
+\n\
+-i str                          input volume\n\
+-o  str                         output volume\n\
+-convert str                    convert datatype to uchar, short, int or float\n\
+-boxFilter size iter            box filter the mri data with a box of size 'size' for 'iter'\n\
+                                iterations\n\
+-selectVolume int               selects the n-th volume in a nifti file with many volumes\n\
+-selectVramon str               selects a specific volume from a vramonz file\n\
+-infoVramon str                 display the list of volumes contained in a vramonz file\n\
+-saveVramon str str             combine a volume and a mask into a vramonz file\n\
+-connected i,j,k,label          set the 6 connected component starting at coordinate i,j,k to\n\
+                                value 'label'\n\
+-largest6con                    largest 6 connected component\n\
+-dilate int                     dilate(size)\n\
+-erode  int                     erode(size)\n\
+-dilateLabels int               dilate(size) keeping the labels in the volume\n\
+-compress   float str           cosinus transform compress rate coeff_file\n\
+-hist   int                     hist(#bins)\n\
+-not                            logical not\n\
+-or path                        logical or with volume at path\n\
+-and path                       logical and with volume at path\n\
+-xor path                       logical xor with volume at path\n\
+-matchHist  str                 matchHistogram(another_mri)\n\
+-add  float                     add float to the volume\n\
+-mult float                     multiply volume by float\n\
+-stats                          stats, returns mean, std, min, max\n\
+-tiff   str str str float       write slice as tiff file. Args: path, cmap, ori {x, y, z},\n\
+                                slice\n\
+-info                           information: dimensions, data type, pixel size\n\
+-showNiiHdr                     display the nifti header\n\
+-setNiiHdr str str              set fields of the nifti header\n\
+-createNiiHdr txt_path out_path create a nifti header based on a text file\n\
+-threshold  float,int           threshold(level,direction), where direction 1: >=, 0: <=, 2: ==\n\
+-volume                         calculate volume\n\
+-new                            create a new volume with dimx,dimy,dimz,pixx,pixy,pixz,offx,\n\
+                                offy,offz\n\
+-zigzag                         print volume values in zigzag order\n\
+-decompose  str                 decompose(basename) a volume with many values into volumes with\n\
+                                one single value\n\
+-resize int,int,int             resize the volume to the new dimensions x, y, z. The original\n\
+                                volume is kept at the center\n\
+-strokeMesh str                 set the surface of the mesh (text format) at input path to\n\
+                                value=max+1; the mesh needs to be in voxel coordinates;\n\
+                                (you need to either provide an empty volume or stroke the mesh\n\
+                                over the MRI that the segmentation used for mesh extraction had\n\
+                                been created on)\n\
+-surfaceNets level[,scale],path extract isosurface from the volume at the indicated level using\n\
+                                the surface nets algorithm, save at the indicated path.\n\
+                                Optional: scale=1 to scale by voxel size\n\
+-sampleMesh str1 str2           sampleMesh(mesh_path, result_path) save the volume values at the\n\
+                                vertices of the mesh pointed by the file path to the result path\n\
+");
+}
 
 #pragma mark -
 int main (int argc, const char * argv[])
@@ -3134,6 +3159,12 @@ int main (int argc, const char * argv[])
         
             //saveVolume((char*)argv[++i]);
             i+=1;
+        }
+        else
+        if(strcmp(argv[i],"-h")==0)    // help
+        {
+            printHelp();
+            return 0;
         }
         else
         if(strcmp(argv[i],"-boxFilter")==0)		// boxFilter(size, iter)
@@ -3428,6 +3459,18 @@ int main (int argc, const char * argv[])
                 return 1;
             }
             newNiiVolume(dx,dy,dz,px,py,pz,ox,oy,oz);
+        }
+        else
+        if(strcmp(argv[i],"-add")==0)
+        {
+            float val;
+            int   n;
+            n=sscanf(argv[++i]," %f ",&val);
+            if(n!=1) {
+                printf("ERROR: You have to provide 1 value to add. %i were provided.\n", n);
+                return 1;
+            }
+            add(val);
         }
         else
         if(strcmp(argv[i],"-mult")==0)
