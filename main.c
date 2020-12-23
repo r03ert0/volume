@@ -2323,9 +2323,11 @@ int loadVolume_Analyze(char *path, AnalyzeHeader **theHdr, char **theImg)
 }
 int saveVolume_Analyze(char *path)
 {
-    int		i;
-    char	base[512];
+    int		        i;
+    char	        base[512];
+    AnalyzeHeader   *new_hdr;
 
+    // remove extension from path
     strcpy(base,path);
     for(i=strlen(base);i>=0;i--)
         if(base[i]=='.')
@@ -2333,12 +2335,19 @@ int saveVolume_Analyze(char *path)
             base[i]=(char)0;
             break;
         }
+
+    // clone the header and set vox_offset=0
+    new_hdr=(AnalyzeHeader *)calloc(1,sizeof(AnalyzeHeader));
+    memcpy(new_hdr,hdr,sizeof(*hdr));
+    new_hdr->vox_offset=0;
+
+    // save
     sprintf(path,"%s.hdr",base);
     printf("Saving hdr to %s\n",path);
-    Analyze_save_hdr(path,*hdr);
+    Analyze_save_hdr(path,*new_hdr);
     sprintf(path,"%s.img",base);
     printf("Saving img to %s\n",path);
-    Analyze_save_img(path,*hdr,img);
+    Analyze_save_img(path,*new_hdr,img);
 
     return 0;
 }
