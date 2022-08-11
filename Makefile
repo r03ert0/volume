@@ -2,23 +2,16 @@ CC=gcc
 CFLAGS=-Wall
 LDFLAGS=-lm
 EXEC=volume
+SRCS=$(wildcard *.c)
+OBJS=$(patsubst %.c,%.o,$(SRCS))
 
 all: $(EXEC)
 
-volume: main.o Analyze.o MGH.o Nifti.o
-	$(CC) $(LDFLAGS) main.o Analyze.o MGH.o Nifti.o -o volume
+$(EXEC): $(OBJS)
+	$(CC) $(LDFLAGS) $^ -o $@
 
-main.o: main.c
-	$(CC) $(CFLAGS) -c main.c
-
-Analyze.o: Analyze.c
-	$(CC) $(CFLAGS) -c Analyze.c
-
-MGH.o: MGH.c
-	$(CC) $(CFLAGS) -c MGH.c
-
-Nifti.o: Nifti.c
-	$(CC) $(CFLAGS) -c Nifti.c
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c
 
 clean:
 	rm -rf *.o
